@@ -1,0 +1,14 @@
+Julia 0.4 Packages
+  -Faker
+	-MySQL
+  -ODBC
+  -JDBC
+  -DBI
+  -PostgreSQL
+
+You will need either one (or more) of the following DBMS softwares configured such that they are able to communicate with the aforementioned packagess
+  -MySQL RDBMS
+  -Oracle RDBMS
+  -PostgreSQL
+
+If you're planning on using JDBC then you require Java Class Libraries
