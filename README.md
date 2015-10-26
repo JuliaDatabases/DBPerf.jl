@@ -44,3 +44,4 @@ Above example will conduct a performance test on Database driver ODBC.jl and JDB
 2. Include MongoDB, HBase, SQLite and Spark SQL in the performance test.
 3. Create a performance table that lists the performance results for all the Database drivers. 
 4. Creating an automated script that pulls the latest code from all the database drivers to conduct a performance test and automatically update the performance table every week.
+5. Use “Prepare” functionality (If available) to update, insert and retrieve records.
