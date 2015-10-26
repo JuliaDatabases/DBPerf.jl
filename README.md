@@ -1,4 +1,8 @@
-###### This repository will contain the code that benchmarks all the Julia Database Drivers / Wrappers , End-Users can utilize this code to compare the performance between various Database drivers available in Julia.
+###### This repository will contain the code that benchmarks all the Julia Database Drivers / Wrappers , End-Users can utilize this code to compare the performance between various Database drivers available in Julia. This code creates an artificial datasets of given size (Size can be specified in config.jl ) and performs following operations using one of the Database driver: Create, Insert, Update, Drop and retrieving the records from DataBase as a DataFrame. (End-Users can specify which Database driver they would like to use)
+
+Datasets being created would cover following Data-types: ```TINYINT, SMALLINT, MEDIUMINT, INTEGER, BIGINT, FLOAT, DOUBLE, DOULBE PRECISION, DATETIME, CHAR, VARCHAR, ENUM```
+
+Measures have been taken such that the random values being generated are well within the Lower bound and Upper bound of that particular datatype.
 
 # USAGE
 
@@ -33,9 +37,10 @@ DBPerf("ODBC.jl","JDBC.jl","Oracle")
 ```
 Above example will conduct a performance test on Database driver ODBC.jl and JDBC.jl, DBMS will be automatically selected for ODBC.jl based on the credentials provided in config.jl, whereas JDBC.jl will be tested against Oracle
 
-#### config.jl should contain all the credentials required for a DBMS connection
+#### config.jl should contain all the credentials required for a DBMS connection and end-users can specify the size of the dataset to be created in config.jl
 
 # TODO
-1. Include MongoDB, HBase, SQLite and Spark SQL in the performance test.
-2. Create a performance table that lists the performance results for all the Database drivers. 
-3. Creating an automated script that pulls the latest code from all the database drivers to conduct a performance test and automatically update the performance table every week.
+1. Adding a functionality to check whether the retrieved records match the Inserted/Updated values. 
+2. Include MongoDB, HBase, SQLite and Spark SQL in the performance test.
+3. Create a performance table that lists the performance results for all the Database drivers. 
+4. Creating an automated script that pulls the latest code from all the database drivers to conduct a performance test and automatically update the performance table every week.
