@@ -2,23 +2,26 @@ global output_string = ""
 include("config.jl")
 include("Backend_Create_and_Execute_Dataset.jl")
 function DBPerf(a1="",a2="",a3="",a4="",a5="")
-  global output_string
+  global output_string = ""
   if a1=="" && a2=="" && a3=="" && a4=="" && length(ARGS)<=0
-    println("Usage: DBPerf(<Database_Driver_1.jl>, <Database_Driver_2.jl>, ....... <Database_Driver_N.jl>, <DBMS>)")
+    #=println("Usage: DBPerf(<Database_Driver_1.jl>, <Database_Driver_2.jl>, ....... <Database_Driver_N.jl>, <DBMS>)")
     println("Wherein Database_Driver.jl can be one of the following: ODBC.jl, JDBC.jl, PostgreSQL.jl, MySQL.jl")
     println("config.jl should contain all the credentials required for a DBMS connection")
     println("DBMS field is applicable only if you're using JDBC.jl, DBMS can be either one of the following: Oracle, MySQL")
     println("Specifying DBMS is mandatory if JDBC.jl is selected, its not required for the rest")
-    println("Example\: DBPerf\(\"ODBC\.jl\",\"JDBC\.jl\",\"Oracle\"\)")
-    println("Above example will conduct a performance test on Database driver ODBC.jl and JDBC.jl, DBMS will be automatically selected for ODBC.jl based on the credentials provided in config.jl, whereas JDBC.jl will be tested against Oracle\n\n")
+    println("\n Example\: DBPerf\(\"ODBC\.jl\",\"JDBC\.jl\",\"Oracle\"\) \n")
+    println("Above example will conduct a performance test on Database driver ODBC.jl and JDBC.jl, DBMS will be automatically selected for ODBC.jl based on the credentials provided in config.jl, whereas JDBC.jl will be tested against Oracle\n\n")=#
 
     output_string = "$output_string Usage: DBPerf(<Database_Driver_1.jl>, <Database_Driver_2.jl>, ....... <Database_Driver_N.jl>, <DBMS>)\n"
     output_string = "$output_string Wherein Database_Driver.jl can be one of the following: ODBC.jl, JDBC.jl, PostgreSQL.jl, MySQL.jl\n"
     output_string = "$output_string config.jl should contain all the credentials required for a DBMS connection\n"
     output_string = "$output_string DBMS field is applicable only if you're using JDBC.jl, DBMS can be either one of the following: Oracle, MySQL\n"
     output_string = "$output_string Specifying DBMS is mandatory if JDBC.jl is selected, its not required for the rest\n"
-    output_string = "\n$output_string Example\: DBPerf\(\"ODBC\.jl\",\"JDBC\.jl\",\"Oracle\"\)\n"
+    output_string = "\n$output_string \n Example\: DBPerf\(\"ODBC\.jl\",\"JDBC\.jl\",\"Oracle\"\)\n\n"
     output_string = "\n$output_string Above example will conduct a performance test on Database driver ODBC.jl and JDBC.jl, DBMS will be automatically selected for ODBC.jl based on the credentials provided in config.jl, whereas JDBC.jl will be tested against Oracle\n\n\n"
+    println("\n\n******************   SUMMARY   ******************\n\n")
+    println(output_string)
+    println("\n\n******************  END OF SUMMARY   ******************\n\n")
     return
   end
   if a1=="MySQL.jl" || a2=="MySQL.jl" || a3=="MySQL.jl" || a4=="MySQL.jl" || ("MySQL.jl" in ARGS)
@@ -68,17 +71,20 @@ function DBPerf(a1="",a2="",a3="",a4="",a5="")
       output_string = "\n$output_string       \nSpecifying DBMS is mandatory while testing JDBC.jl, DBMS can be either one of the following: Oracle, MySQL\n\n"
     end
   end
+  println("\n\n******************   SUMMARY   ******************\n")
+  println(output_string)
+  println("\n\n******************  END OF SUMMARY   ******************\n\n")
 end
 
 if length(ARGS)<=0
-  println("\n\nUsage: DBPerf.jl <Database_Driver_1.jl> <Database_Driver_2.jl> ....... <Database_Driver_N.jl> <DBMS>")
+  #=println("\n\nUsage: DBPerf.jl <Database_Driver_1.jl> <Database_Driver_2.jl> ....... <Database_Driver_N.jl> <DBMS>")
   println("Wherein Database_Driver.jl can be one of the following: ODBC.jl, JDBC.jl, PostgreSQL.jl, MySQL.jl")
   println("config.jl should contain all the credentials required for a DBMS connection")
   println("DBMS field is applicable only if you're using JDBC.jl, DBMS can be either one of the following: Oracle, MySQL")
   println("Specifying DBMS is mandatory if JDBC.jl is selected, its not required for the rest")
   println("Example: DBPerf.jl ODBC.jl JDBC.jl Oracle")
   println("Above example will conduct a performance test on Database driver ODBC.jl and JDBC.jl, DBMS will be automatically selected for ODBC.jl based on the credentials provided in config.jl, whereas JDBC.jl will be tested against Oracle\n\n")
-  println("\n\n\nIf you're running the program from Julia prompt then please use following syntax\n\n\n")
+  println("\n\n\nIf you're running the program from Julia prompt then please use following syntax\n\n\n")=#
 
   output_string = "$output_string \n\nUsage: DBPerf.jl <Database_Driver_1.jl> <Database_Driver_2.jl> ....... <Database_Driver_N.jl> <DBMS>\n"
   output_string = "$output_string Wherein Database_Driver.jl can be one of the following: ODBC.jl, JDBC.jl, PostgreSQL.jl, MySQL.jl\n"
@@ -88,8 +94,16 @@ if length(ARGS)<=0
   output_string = "$output_string \nExample: DBPerf.jl ODBC.jl JDBC.jl Oracle\n"
   output_string = "$output_string \nAbove example will conduct a performance test on Database driver ODBC.jl and JDBC.jl, DBMS will be automatically selected for ODBC.jl based on the credentials provided in config.jl, whereas JDBC.jl will be tested against Oracle\n\n\n"
   output_string = "$output_string \n\n\nIf you're running the program from Julia prompt then please use following syntax\n\n\n\n"
+  output_string = "$output_string Usage: DBPerf(<Database_Driver_1.jl>, <Database_Driver_2.jl>, ....... <Database_Driver_N.jl>, <DBMS>)\n"
+  output_string = "$output_string Wherein Database_Driver.jl can be one of the following: ODBC.jl, JDBC.jl, PostgreSQL.jl, MySQL.jl\n"
+  output_string = "$output_string config.jl should contain all the credentials required for a DBMS connection\n"
+  output_string = "$output_string DBMS field is applicable only if you're using JDBC.jl, DBMS can be either one of the following: Oracle, MySQL\n"
+  output_string = "$output_string Specifying DBMS is mandatory if JDBC.jl is selected, its not required for the rest\n"
+  output_string = "\n$output_string \n Example\: DBPerf\(\"ODBC\.jl\",\"JDBC\.jl\",\"Oracle\"\)\n\n"
+  output_string = "\n$output_string Above example will conduct a performance test on Database driver ODBC.jl and JDBC.jl, DBMS will be automatically selected for ODBC.jl based on the credentials provided in config.jl, whereas JDBC.jl will be tested against Oracle\n\n\n"
+  println("\n\n******************   SUMMARY   ******************\n")
+  println(output_string)
+  println("\n\n******************  END OF SUMMARY   ******************\n\n")
+else
+  DBPerf()
 end
-DBPerf()
-println("\n\n******************   SUMMARY   ******************\n\n")
-println(output_string)
-println("\n\n******************  END OF SUMMARY   ******************\n\n")
