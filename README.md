@@ -13,7 +13,6 @@ $ julia DBPerf.jl <Database_Driver_1.jl> <Database_Driver_2.jl> ....... <Databas
 Wherein
 * Database_Driver.jl can be one of the following: ODBC.jl, JDBC.jl, PostgreSQL.jl, MySQL.jl
 * DBMS field is applicable only if you're using JDBC.jl, DBMS can be either one of the following: Oracle, MySQL
-* config.jl should contain all the credentials required for a DBMS connection
 
 ###### Example
 ```
@@ -34,6 +33,7 @@ DBPerf("ODBC.jl","JDBC.jl","Oracle")
 ```
 Above example will conduct a performance test on Database driver ODBC.jl and JDBC.jl, DBMS will be automatically selected for ODBC.jl based on the credentials provided in config.jl, whereas JDBC.jl will be tested against Oracle
 
+#### config.jl should contain all the credentials required for a DBMS connection
 
 # TODO
 1. Include MongoDB, HBase, SQLite and Spark SQL in the performance test.
