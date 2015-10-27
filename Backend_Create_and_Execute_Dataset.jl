@@ -40,7 +40,7 @@ function insert_queries(number_of_datasets=10000,dbms="MySQL")
     return Insert_Query
   end
   if dbms=="Oracle"
-    Insert_Query[1] = "CREATE TABLE $Oracle_table_name(ID INT, Name VARCHAR(4000), Salary FLOAT, LastLogin DATE, OfficeNo NUMBER(4, 0), JobType VARCHAR2(20) CHECK( JobType IN ('HR', 'Management', 'Accounts')), h NUMBER(8, 0), n NUMBER(11, 0), z NUMBER(20, 0), z1 FLOAT(25), z2 FLOAT(25), cha CHAR, empno NUMBER(6, 0))"
+    Insert_Query[1] = "CREATE TABLE $Oracle_table_name(ID INT, Name VARCHAR(4000), Salary FLOAT, LastLogin DATE, OfficeNo NUMBER(4), JobType VARCHAR2(20) CHECK( JobType IN ('HR', 'Management', 'Accounts')), h NUMBER(8), n NUMBER(11), z NUMBER(20), z1 FLOAT(25), z2 FLOAT(25), cha CHAR, empno NUMBER(6))"
     Insert_Query[2] = "create unique index id_idx on $Oracle_table_name(ID)"
     varcha, rfloat, datetime, tint, enume, mint, rint, bint, dfloat, dpfloat, chara, sint = create_queries(number_of_datasets)
     for i=3 :(number_of_datasets)
@@ -143,7 +143,7 @@ function odbc_benchmarks(queries,key,dbms="MySQL")
     end
   end
 	println("Time taken by ODBC wrapper for operation $key is")
-	temp = @elapsed @time for i = 1:size(queries,1)-3
+	temp = @elapsed @time for i = 1:size(queries,1)
 		ODBC.query(queries[i])
 	end
   output_string = "$output_string Time taken by ODBC wrapper for operation $key is $temp seconds\n"
@@ -204,6 +204,7 @@ function jdbc_benchmarks(queries, key, stmt,dbms)
       JDBC_retrieved = readtable(rs)
       #JDBC.jl is not extracting floating point numbers from Oracle, hence following steps
       i=1
+      rs = executeQuery(stmt, "select * from $Oracle_table_name")
       for r in rs
          JDBC_retrieved[:Z2][i] = getFloat(r,"z2")
          JDBC_retrieved[:Z][i] = getFloat(r,"z")
