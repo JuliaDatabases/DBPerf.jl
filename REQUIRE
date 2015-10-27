@@ -1,0 +1,16 @@
+1) Julia 0.4 Packages
+  -Faker       , Pkg.add("Faker")
+	-MySQL       , Pkg.clone("https://github.com/JuliaDB/MySQL.jl.git")
+  -ODBC        , Pkg.clone("https://github.com/JuliaDB/ODBC.jl.git")
+  -JDBC        , Pkg.clone("https://github.com/JuliaDB/JDBC.jl.git")
+  -DBI         , Pkg.clone("https://github.com/JuliaDB/DBI.jl.git")
+  -PostgreSQL  , Pkg.clone("https://github.com/JuliaDB/PostgreSQL.jl.git")
+
+2) You will need either one (or more) of the following DBMS softwares configured such that they are able to communicate with the aforementioned packagess
+  -MySQL RDBMS
+  -Oracle RDBMS
+  -PostgreSQL
+
+3) If you're planning on using JDBC then you require Java Class Libraries
+
+4) Create a Database named "mysqltest1" in MySQL, "mytest" in PostgreSQL, if you're using Oracle make sure you don't have a table named "Employee" in your Database.
