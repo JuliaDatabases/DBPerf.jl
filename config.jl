@@ -1,5 +1,5 @@
 #Assign the variable number_of_datasets with an Integer, this will indicate the number of Insert and Update queries that will be created and executed using this program
-global number_of_datasets = 1000
+global number_of_datasets = 100000
 
 #Feel free to comment the unused driver blocks
 
@@ -39,3 +39,8 @@ global const JDBC_Oracle_Username = "julia"
 global const JDBC_Oracle_Password = "password"
 global const Oracle_JDBC_URL= "jdbc:oracle:thin:@127.0.0.1:1521"
 #global const Oracle_table_name = "Employee"
+
+#Credentials for Mongo DB
+using LibBSON, Mongo
+global const Mongo_Host = "localhost"
+global const Mongo_Port = 27017

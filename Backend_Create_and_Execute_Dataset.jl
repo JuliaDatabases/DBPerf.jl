@@ -40,7 +40,7 @@ function insert_queries(number_of_datasets=10000,dbms="MySQL")
     return Insert_Query
   end
   if dbms=="Oracle"
-    Insert_Query[1] = "CREATE TABLE $Oracle_table_name(ID INT, Name VARCHAR(4000), Salary FLOAT, LastLogin DATE, OfficeNo NUMBER(4, 0), JobType VARCHAR2(20) CHECK( JobType IN ('HR', 'Management', 'Accounts')), h NUMBER(8, 0), n NUMBER(11, 0), z NUMBER(20, 0), z1 FLOAT(25), z2 FLOAT(25), cha CHAR, empno NUMBER(6, 0))"
+    Insert_Query[1] = "CREATE TABLE $Oracle_table_name(ID INT, Name VARCHAR(4000), Salary FLOAT, LastLogin DATE, OfficeNo NUMBER(4), JobType VARCHAR2(20) CHECK( JobType IN ('HR', 'Management', 'Accounts')), h NUMBER(8), n NUMBER(11), z NUMBER(20), z1 FLOAT(25), z2 FLOAT(25), cha CHAR, empno NUMBER(6))"
     Insert_Query[2] = "create unique index id_idx on $Oracle_table_name(ID)"
     varcha, rfloat, datetime, tint, enume, mint, rint, bint, dfloat, dpfloat, chara, sint = create_queries(number_of_datasets)
     for i=3 :(number_of_datasets)
@@ -143,7 +143,7 @@ function odbc_benchmarks(queries,key,dbms="MySQL")
     end
   end
 	println("Time taken by ODBC wrapper for operation $key is")
-	temp = @elapsed @time for i = 1:size(queries,1)-3
+	temp = @elapsed @time for i = 1:size(queries,1)
 		ODBC.query(queries[i])
 	end
   output_string = "$output_string Time taken by ODBC wrapper for operation $key is $temp seconds\n"
@@ -204,6 +204,7 @@ function jdbc_benchmarks(queries, key, stmt,dbms)
       JDBC_retrieved = readtable(rs)
       #JDBC.jl is not extracting floating point numbers from Oracle, hence following steps
       i=1
+      rs = executeQuery(stmt, "select * from $Oracle_table_name")
       for r in rs
          JDBC_retrieved[:Z2][i] = getFloat(r,"z2")
          JDBC_retrieved[:Z][i] = getFloat(r,"z")
@@ -292,4 +293,54 @@ function delete_table(dbms_wrapper,conn,table_name="Employee")
       return
     end
   end
+end
+
+function mongo_benchmarks(user_choice="")
+  global output_string
+  client = MongoClient(Mongo_Host,Mongo_Port)
+  handle = MongoCollection(client, "temp_db","DBPerf")
+
+  if ("MongoUpdate" in user_choice) || ("MongoUpdate" in ARGS)
+    #Update
+    varcha, rfloat, datetime, tint, enume, mint, rint, bint, dfloat, dpfloat, chara, sint = create_queries(number_of_datasets)
+    temp=@elapsed @time for i = 1 : number_of_datasets-2
+      Mongo.update(handle,"ID" => i,Mongo.set("ID" => i, "Name" =>(varcha[i]), "Salary" =>(rfloat[i]), "LastLogin" =>(datetime[i]), "OfficeNo" =>(tint[i]), "JobType" =>(enume[i]), "h" =>(mint[i]), "n" =>(rint[i]), "z" =>(bint[i]), "z1" =>(dfloat[i]), "z2" =>(dpfloat[i]), "cha" =>(chara[i]), "empno" =>(sint[i])))
+    end
+    output_string = "$output_string Time taken by Mongo.jl for Operation Update is $temp\n"
+    println("Time taken by Mongo.jl for Operation Update is $temp\n")
+
+    #Retrieving records
+    Cursor = Mongo.find(handle,Mongo.query())
+    Mongo_retrieved = BSONObject[]
+    temp=@elapsed @time for i in Cursor
+         push!(Mongo_retrieved,i)
+    end
+    output_string = "$output_string Time taken by Mongo.jl for retrieving all the Updated records is $temp\n"
+    println("Time taken by Mongo.jl for retrieving all the Updated records is $temp\n")
+    return
+  end
+
+  #Delete
+  Mongo.delete(handle, ())
+
+  #Insert
+  varcha, rfloat, datetime, tint, enume, mint, rint, bint, dfloat, dpfloat, chara, sint = create_queries(number_of_datasets)
+  temp=@elapsed @time for i=1 : number_of_datasets-2
+    Mongo.insert(handle, ("ID" => i, "Name" =>(varcha[i]), "Salary" =>(rfloat[i]), "LastLogin" =>(datetime[i]), "OfficeNo" =>(tint[i]), "JobType" =>(enume[i]), "h" =>(mint[i]), "n" =>(rint[i]), "z" =>(bint[i]), "z1" =>(dfloat[i]), "z2" =>(dpfloat[i]), "cha" =>(chara[i]), "empno" =>(sint[i])))
+  end
+  output_string = "$output_string Time taken by Mongo.jl for operation Insert is $temp\n"
+  println("Time taken by Mongo.jl for operation Insert is $temp\n")
+
+  #Retrieving records after Insert
+  Cursor = Mongo.find(handle,Mongo.query())
+  Mongo_retrieved = BSONObject[]
+  temp=@elapsed @time for i in Cursor
+       push!(Mongo_retrieved,i)
+  end
+  output_string = "$output_string Time taken by Mongo.jl for retrieving all the Inserted records is $temp\n"
+  println("Time taken by Mongo.jl for retrieving all the Inserted records is $temp\n\n")
+  output_string = "$output_string NOTE:- Inorder to perform update operation on Mongo.jl, please Index the key <ID> in Mongo shell and rerun this program with following parameter: MongoUpdate\n"
+  output_string = "$output_string \n\n\t\t\t Example \n\n Step 1:- \$ julia DBPerf.jl Mongo.jl \n Step 2:- Create Index for key ID in Mongo shell \n\t\t \$Mongo, \n\t\t mongo> use temp_db, \n\t\t mongo> db.DBPerf.ensureIndex({ID : 1}))  \n Step 3:- \$ julia DBPerf.jl MongoUpdate \n"
+  output_string = "$output_string \n\n\tIf you're executing this program through Julia prompt then\n\n"
+  output_string = "$output_string Step 1:- julia> DBPerf(\"Mongo.jl\") \n Step 2:- Create Index for key ID in Mongo shell \n Step 3:- julia> DBPerf(\"MongoUpdate\")  \n"
 end
