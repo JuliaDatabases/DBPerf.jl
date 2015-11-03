@@ -57,10 +57,20 @@ function insert_queries(number_of_datasets=10000,dbms="MySQL")
   	end
 	  return Insert_Query
   end
+
+  if dbms == "SQLite"
+    Insert_Query[1] = "CREATE TABLE Employee(ID INTEGER, Name TEXT, Salary REAL, LastLogin NUMERIC, OfficeNo INTEGER, JobType TEXT,h INTEGER, n INTEGER, z INTEGER, z1 REAL, z2 REAL, cha TEXT, empno INTEGER)"
+    Insert_Query[2] = "CREATE UNIQUE INDEX index_ID ON Employee(ID)"
+    varcha, rfloat, datetime, tint, enume, mint, rint, bint, dfloat, dpfloat, chara, sint = create_queries(number_of_datasets)
+  	for i=3 : (number_of_datasets)
+		  Insert_Query[i] = "INSERT INTO Employee (ID, Name, Salary, LastLogin, OfficeNo, JobType,h, n, z, z1, z2, cha, empno) VALUES ($(i-2), '$(varcha[i])', $(rfloat[i]), '$(datetime[i])', $(tint[i]), '$(enume[i])', $(mint[i]), $(rint[i]), $(bint[i]), $(dfloat[i]), $(dpfloat[i]), '$(chara[i])', $(sint[i]));"
+  	end
+	  return Insert_Query
+  end
 end
 
 function update_queries(number_of_datasets=10000,dbms="MySQL")
-  if (dbms=="MySQL" || dbms=="PostgreSQL")
+  if (dbms=="MySQL" || dbms=="PostgreSQL" || dbms=="SQLite")
     number_of_datasets = number_of_datasets - 2
     Update_Query = Array(String, (number_of_datasets))
     varcha, rfloat, datetime, tint, enume, mint, rint, bint, dfloat, dpfloat, chara, sint = create_queries(number_of_datasets)
@@ -265,7 +275,7 @@ end
 
 number_of_datasets = number_of_datasets+2
 
-function delete_table(dbms_wrapper,conn,table_name="Employee")
+function delete_table(dbms_wrapper,conn="",table_name="Employee")
   if dbms_wrapper=="MySQL.jl"
     try
       mysql_execute_query(conn,"drop table mysqltest1.Employee")
@@ -289,6 +299,12 @@ function delete_table(dbms_wrapper,conn,table_name="Employee")
   elseif dbms_wrapper == "JDBC.jl"
     try
       executeUpdate(stmt,"drop table $table_name")
+    catch
+      return
+    end
+  elseif dbms_wrapper == "SQLite.jl"
+    try
+      run(`rm $SQLite_DBname`)
     catch
       return
     end
@@ -343,4 +359,20 @@ function mongo_benchmarks(user_choice="")
   output_string = "$output_string \n\n\t\t\t Example \n\n Step 1:- \$ julia DBPerf.jl Mongo.jl \n Step 2:- Create Index for key ID in Mongo shell \n\t\t \$Mongo, \n\t\t mongo> use temp_db, \n\t\t mongo> db.DBPerf.ensureIndex({ID : 1}))  \n Step 3:- \$ julia DBPerf.jl MongoUpdate \n"
   output_string = "$output_string \n\n\tIf you're executing this program through Julia prompt then\n\n"
   output_string = "$output_string Step 1:- julia> DBPerf(\"Mongo.jl\") \n Step 2:- Create Index for key ID in Mongo shell \n Step 3:- julia> DBPerf(\"MongoUpdate\")  \n"
+end
+
+function sqlite_benchmarks(queries,user_choice="")
+  global output_string
+  db = SQLite.DB(SQLite_DBname)
+  temp=@elapsed @time for i in queries
+         SQLite.query(db,i)
+  end
+  output_string = "$output_string Time taken by SQLite.jl for operation $user_choice is $temp Seconds\n"
+  println("Time taken by SQLite.jl for operation $user_choice is $temp Seconds\n")
+  println("Time taken by SQLite.jl for retrieving all the records after performing operation $user_choice is")
+  temp = @elapsed @time begin
+    sqlite_retrieved = SQLite.query(db,"select * from Employee")
+    #Inorder to retrieve records from the DataStream, use following syntax sqlite_retrieved.data[Index_number], where Index_number can range from 1 to 13 in this case
+  end
+  output_string = "$output_string Time taken by SQLite.jl for retrieving all the records after performing operation $user_choice is $temp Seconds\n"
 end
