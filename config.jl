@@ -1,5 +1,5 @@
 #Assign the variable number_of_datasets with an Integer, this will indicate the number of Insert and Update queries that will be created and executed using this program
-global number_of_datasets = 100000
+global number_of_datasets = 100
 
 #Feel free to comment the unused driver blocks
 
@@ -44,3 +44,8 @@ global const Oracle_JDBC_URL= "jdbc:oracle:thin:@127.0.0.1:1521"
 using LibBSON, Mongo
 global const Mongo_Host = "localhost"
 global const Mongo_Port = 27017
+
+#Credentials for SQLite
+using SQLite
+global const SQLite_DBname = "Benchmark.sqlite"
+global const SQLite_table = "Employee"

@@ -7,7 +7,7 @@ function DBPerf(a1="",a2="",a3="",a4="",a5="",a6="")
   global output_string = ""
   if a1=="" && a2=="" && a3=="" && a4=="" && a5=="" && a6=="" && length(ARGS)<=0
     output_string = "$output_string Usage: DBPerf(<Database_Driver_1.jl>, <Database_Driver_2.jl>, ....... <Database_Driver_N.jl>, <DBMS>)\n"
-    output_string = "$output_string Wherein Database_Driver.jl can be one of the following: ODBC.jl, JDBC.jl, PostgreSQL.jl, MySQL.jl, Mongo.jl\n"
+    output_string = "$output_string Wherein Database_Driver.jl can be one of the following: ODBC.jl, JDBC.jl, PostgreSQL.jl, MySQL.jl, Mongo.jl, SQLite.jl\n"
     output_string = "$output_string config.jl should contain all the credentials required for a DBMS connection\n"
     output_string = "$output_string DBMS field is applicable only if you're using JDBC.jl, DBMS can be either one of the following: Oracle, MySQL\n"
     output_string = "$output_string Specifying DBMS is mandatory if JDBC.jl is selected, its not required for the rest\n"
@@ -71,6 +71,14 @@ function DBPerf(a1="",a2="",a3="",a4="",a5="",a6="")
     mongo_benchmarks(user_choice)
   end
 
+  if ("SQLite.jl" in user_choice) || ("SQLite.jl" in ARGS)
+    output_string = "$output_string \n\n *******  SQLite.jl  ******* \n"
+    db = SQLite.DB(SQLite_DBname)
+    delete_table("SQLite.jl", db, SQLite_table)
+    sqlite_benchmarks(insert_queries(number_of_datasets,"SQLite"), db, "Insert")
+    sqlite_benchmarks(update_queries(number_of_datasets,"SQLite"), db, "Update")
+  end
+
   println("\n\n******************   SUMMARY   ******************\n")
   println(output_string)
   println("\n\n******************  END OF SUMMARY   ******************\n\n")
@@ -78,7 +86,7 @@ end
 
 if length(ARGS)<=0
   output_string = "$output_string \n\nUsage: DBPerf.jl <Database_Driver_1.jl> <Database_Driver_2.jl> ....... <Database_Driver_N.jl> <DBMS>\n"
-  output_string = "$output_string Wherein Database_Driver.jl can be one of the following: ODBC.jl, JDBC.jl, PostgreSQL.jl, MySQL.jl, Mongo.jl\n"
+  output_string = "$output_string Wherein Database_Driver.jl can be one of the following: ODBC.jl, JDBC.jl, PostgreSQL.jl, MySQL.jl, Mongo.jl, SQLite.jl\n"
   output_string = "$output_string config.jl should contain all the credentials required for a DBMS connection\n"
   output_string = "$output_string DBMS field is applicable only if you're using JDBC.jl, DBMS can be either one of the following: Oracle, MySQL\n"
   output_string = "$output_string Specifying DBMS is mandatory if JDBC.jl is selected, its not required for the rest\n"
@@ -86,7 +94,7 @@ if length(ARGS)<=0
   output_string = "$output_string \nAbove example will conduct a performance test on Database driver ODBC.jl and JDBC.jl, DBMS will be automatically selected for ODBC.jl based on the credentials provided in config.jl, whereas JDBC.jl will be tested against Oracle\n\n\n"
   output_string = "$output_string \n\n\nIf you're running the program from Julia prompt then please use following syntax\n\n\n\n"
   output_string = "$output_string Usage: DBPerf(<Database_Driver_1.jl>, <Database_Driver_2.jl>, ....... <Database_Driver_N.jl>, <DBMS>)\n"
-  output_string = "$output_string Wherein Database_Driver.jl can be one of the following: ODBC.jl, JDBC.jl, PostgreSQL.jl, MySQL.jl, Mongo.jl\n"
+  output_string = "$output_string Wherein Database_Driver.jl can be one of the following: ODBC.jl, JDBC.jl, PostgreSQL.jl, MySQL.jl, Mongo.jl, SQLite.jl\n"
   output_string = "$output_string config.jl should contain all the credentials required for a DBMS connection\n"
   output_string = "$output_string DBMS field is applicable only if you're using JDBC.jl, DBMS can be either one of the following: Oracle, MySQL\n"
   output_string = "$output_string Specifying DBMS is mandatory if JDBC.jl is selected, its not required for the rest\n"

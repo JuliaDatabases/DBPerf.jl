@@ -57,9 +57,28 @@ function insert_queries(number_of_datasets=10000,dbms="MySQL")
   	end
 	  return Insert_Query
   end
+
+  if dbms == "SQLite"
+    Insert_Query[1] = "CREATE TABLE $SQLite_table (ID INTEGER, Name TEXT, Salary REAL, LastLogin NUMERIC, OfficeNo INTEGER, JobType TEXT,h INTEGER, n INTEGER, z INTEGER, z1 REAL, z2 REAL, cha TEXT, empno INTEGER)"
+    Insert_Query[2] = "CREATE UNIQUE INDEX index_ID ON $SQLite_table (ID)"
+    varcha, rfloat, datetime, tint, enume, mint, rint, bint, dfloat, dpfloat, chara, sint = create_queries(number_of_datasets)
+  	for i=3 : (number_of_datasets)
+		  Insert_Query[i] = "INSERT INTO $SQLite_table (ID, Name, Salary, LastLogin, OfficeNo, JobType,h, n, z, z1, z2, cha, empno) VALUES ($(i-2), '$(varcha[i])', $(rfloat[i]), '$(datetime[i])', $(tint[i]), '$(enume[i])', $(mint[i]), $(rint[i]), $(bint[i]), $(dfloat[i]), $(dpfloat[i]), '$(chara[i])', $(sint[i]));"
+  	end
+	  return Insert_Query
+  end
 end
 
 function update_queries(number_of_datasets=10000,dbms="MySQL")
+  if dbms=="SQLite"
+    number_of_datasets = number_of_datasets - 2
+    Update_Query = Array(String, (number_of_datasets))
+    varcha, rfloat, datetime, tint, enume, mint, rint, bint, dfloat, dpfloat, chara, sint = create_queries(number_of_datasets)
+    for i=1 : (number_of_datasets)
+      Update_Query[i] = "UPDATE $SQLite_table SET Name='$(varcha[i])', Salary=$(rfloat[i]), LastLogin='$(datetime[i])', OfficeNo=$(tint[i]), JobType='$(enume[i])', h=$(mint[i]), n=$(rint[i]), z=$(bint[i]), z1=$(dfloat[i]), z2=$(dpfloat[i]), cha='$(chara[i])', empno=$(sint[i]) where ID = $i;"
+    end
+    return Update_Query
+  end
   if (dbms=="MySQL" || dbms=="PostgreSQL")
     number_of_datasets = number_of_datasets - 2
     Update_Query = Array(String, (number_of_datasets))
@@ -268,7 +287,7 @@ number_of_datasets = number_of_datasets+2
 function delete_table(dbms_wrapper,conn,table_name="Employee")
   if dbms_wrapper=="MySQL.jl"
     try
-      mysql_execute_query(conn,"drop table mysqltest1.Employee")
+      mysql_execute_query(conn,"drop table $(MySQL_Database).$(table_name)")
     catch
       return
     end
@@ -280,7 +299,7 @@ function delete_table(dbms_wrapper,conn,table_name="Employee")
     end
   elseif dbms_wrapper == "PostgreSQL.jl"
     try
-      stmt = PostgreSQL.prepare(conn, "drop table Employee")
+      stmt = PostgreSQL.prepare(conn, "drop table $table_name")
 			PostgreSQL.execute(stmt)
       PostgreSQL.finish(stmt)
     catch
@@ -289,6 +308,12 @@ function delete_table(dbms_wrapper,conn,table_name="Employee")
   elseif dbms_wrapper == "JDBC.jl"
     try
       executeUpdate(stmt,"drop table $table_name")
+    catch
+      return
+    end
+  elseif dbms_wrapper == "SQLite.jl"
+    try
+      SQLite.query(conn,"drop table $table_name")
     catch
       return
     end
@@ -340,7 +365,22 @@ function mongo_benchmarks(user_choice="")
   output_string = "$output_string Time taken by Mongo.jl for retrieving all the Inserted records is $temp\n"
   println("Time taken by Mongo.jl for retrieving all the Inserted records is $temp\n\n")
   output_string = "$output_string NOTE:- Inorder to perform update operation on Mongo.jl, please Index the key <ID> in Mongo shell and rerun this program with following parameter: MongoUpdate\n"
-  output_string = "$output_string \n\n\t\t\t Example \n\n Step 1:- \$ julia DBPerf.jl Mongo.jl \n Step 2:- Create Index for key ID in Mongo shell \n\t\t \$Mongo, \n\t\t mongo> use temp_db, \n\t\t mongo> db.DBPerf.ensureIndex({ID : 1}))  \n Step 3:- \$ julia DBPerf.jl MongoUpdate \n"
+  output_string = "$output_string \n\n\t\t\t Example \n\n Step 1:- \$ julia DBPerf.jl Mongo.jl \n Step 2:- Create Index for key ID in Mongo shell \n\t\t \$mongo, \n\t\t mongo> use temp_db, \n\t\t mongo> db.DBPerf.ensureIndex({ID : 1})  \n Step 3:- \$ julia DBPerf.jl MongoUpdate \n"
   output_string = "$output_string \n\n\tIf you're executing this program through Julia prompt then\n\n"
   output_string = "$output_string Step 1:- julia> DBPerf(\"Mongo.jl\") \n Step 2:- Create Index for key ID in Mongo shell \n Step 3:- julia> DBPerf(\"MongoUpdate\")  \n"
+end
+
+function sqlite_benchmarks(queries,db,user_choice="")
+  global output_string
+  temp=@elapsed @time for i in queries
+         SQLite.query(db,i)
+  end
+  output_string = "$output_string Time taken by SQLite.jl for operation $user_choice is $temp Seconds\n"
+  println("Time taken by SQLite.jl for operation $user_choice is $temp Seconds\n")
+  println("Time taken by SQLite.jl for retrieving all the records after performing operation $user_choice is")
+  temp = @elapsed @time begin
+    sqlite_retrieved = SQLite.query(db,"select * from $SQLite_table")
+    #Inorder to retrieve records from the DataStream, use following syntax sqlite_retrieved.data[Index_number], where Index_number can range from 1 to 13 in this case
+  end
+  output_string = "$output_string Time taken by SQLite.jl for retrieving all the records after performing operation $user_choice is $temp Seconds\n"
 end
