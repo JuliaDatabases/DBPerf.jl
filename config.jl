@@ -48,3 +48,4 @@ global const Mongo_Port = 27017
 #Credentials for SQLite
 using SQLite
 global const SQLite_DBname = "Benchmark.sqlite"
+global const SQLite_table = "Employee"

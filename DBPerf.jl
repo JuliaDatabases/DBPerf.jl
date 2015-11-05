@@ -66,16 +66,17 @@ function DBPerf(a1="",a2="",a3="",a4="",a5="",a6="")
     end
   end
 
-  if ("Mongo.jl" in user_choice) || ("Mongo.jl" in ARGS)
+  if ("Mongo.jl" in user_choice) || ("Mongo.jl" in ARGS) || ("MongoUpdate" in user_choice) || ("MongoUpdate" in ARGS)
     output_string = "$output_string \n\n *******  Mongo.jl  ******* \n"
     mongo_benchmarks(user_choice)
   end
 
   if ("SQLite.jl" in user_choice) || ("SQLite.jl" in ARGS)
     output_string = "$output_string \n\n *******  SQLite.jl  ******* \n"
-    delete_table("SQLite.jl")
-    sqlite_benchmarks(insert_queries(number_of_datasets,"SQLite"),"Insert")
-    sqlite_benchmarks(update_queries(number_of_datasets,"SQLite"),"Update")
+    db = SQLite.DB(SQLite_DBname)
+    delete_table("SQLite.jl", db, SQLite_table)
+    sqlite_benchmarks(insert_queries(number_of_datasets,"SQLite"), db, "Insert")
+    sqlite_benchmarks(update_queries(number_of_datasets,"SQLite"), db, "Update")
   end
 
   println("\n\n******************   SUMMARY   ******************\n")
