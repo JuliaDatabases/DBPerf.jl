@@ -62,25 +62,23 @@ function insert_queries(number_of_datasets=10000,dbms="MySQL")
     Insert_Query[1] = "CREATE TABLE $SQLite_table (ID INTEGER, Name TEXT, Salary REAL, LastLogin NUMERIC, OfficeNo INTEGER, JobType TEXT,h INTEGER, n INTEGER, z INTEGER, z1 REAL, z2 REAL, cha TEXT, empno INTEGER)"
     Insert_Query[2] = "CREATE UNIQUE INDEX index_ID ON $SQLite_table (ID)"
     varcha, rfloat, datetime, tint, enume, mint, rint, bint, dfloat, dpfloat, chara, sint = create_queries(number_of_datasets)
-  	for i=3 : (number_of_datasets)
-		  Insert_Query[i] = "INSERT INTO $SQLite_table (ID, Name, Salary, LastLogin, OfficeNo, JobType,h, n, z, z1, z2, cha, empno) VALUES ($(i-2), '$(varcha[i])', $(rfloat[i]), '$(datetime[i])', $(tint[i]), '$(enume[i])', $(mint[i]), $(rint[i]), $(bint[i]), $(dfloat[i]), $(dpfloat[i]), '$(chara[i])', $(sint[i]));"
+  	for i=1 : (number_of_datasets)
+		  Insert_Query[i+2] = "INSERT INTO $SQLite_table (ID, Name, Salary, LastLogin, OfficeNo, JobType,h, n, z, z1, z2, cha, empno) VALUES ($(i), '$(varcha[i])', $(rfloat[i]), '$(datetime[i])', $(tint[i]), '$(enume[i])', $(mint[i]), $(rint[i]), $(bint[i]), $(dfloat[i]), $(dpfloat[i]), '$(chara[i])', $(sint[i]));"
   	end
-	  return Insert_Query
+	  return Insert_Query, varcha, rfloat, datetime, tint, enume, mint, rint, bint, dfloat, dpfloat, chara, sint
   end
 end
 
 function update_queries(number_of_datasets=10000,dbms="MySQL")
   if dbms=="SQLite"
-    number_of_datasets = number_of_datasets - 2
     Update_Query = Array(String, (number_of_datasets))
     varcha, rfloat, datetime, tint, enume, mint, rint, bint, dfloat, dpfloat, chara, sint = create_queries(number_of_datasets)
     for i=1 : (number_of_datasets)
       Update_Query[i] = "UPDATE $SQLite_table SET Name='$(varcha[i])', Salary=$(rfloat[i]), LastLogin='$(datetime[i])', OfficeNo=$(tint[i]), JobType='$(enume[i])', h=$(mint[i]), n=$(rint[i]), z=$(bint[i]), z1=$(dfloat[i]), z2=$(dpfloat[i]), cha='$(chara[i])', empno=$(sint[i]) where ID = $i;"
     end
-    return Update_Query
+    return Update_Query, varcha, rfloat, datetime, tint, enume, mint, rint, bint, dfloat, dpfloat, chara, sint
   end
   if (dbms=="MySQL" || dbms=="PostgreSQL")
-    #number_of_datasets = number_of_datasets - 2
     Update_Query = Array(String, (number_of_datasets))
     varcha, rfloat, datetime, tint, enume, mint, rint, bint, dfloat, dpfloat, chara, sint = create_queries(number_of_datasets)
     for i=1 : (number_of_datasets)
@@ -88,13 +86,12 @@ function update_queries(number_of_datasets=10000,dbms="MySQL")
     end
     return Update_Query, varcha, rfloat, datetime, tint, enume, mint, rint, bint, dfloat, dpfloat, chara, sint
   elseif(dbms=="Oracle")
-    number_of_datasets = number_of_datasets - 2
     Update_Query = Array(String, (number_of_datasets))
     varcha, rfloat, datetime, tint, enume, mint, rint, bint, dfloat, dpfloat, chara, sint = create_queries(number_of_datasets)
     for i=1 : (number_of_datasets)
       Update_Query[i] = "UPDATE $Oracle_table_name SET Name='$(varcha[i])', Salary=$(rfloat[i]), LastLogin=TO_DATE('$(datetime[i])', 'yyyy-mm-dd hh24:mi:ss'), OfficeNo=$(tint[i]), JobType='$(enume[i])', h=$(mint[i]), n=$(rint[i]), z=$(bint[i]), z1=$(dfloat[i]), z2=$(dpfloat[i]), cha='$(chara[i])', empno=$(sint[i]) where ID = $i"
     end
-    return Update_Query
+    return Update_Query, varcha, rfloat, datetime, tint, enume, mint, rint, bint, dfloat, dpfloat, chara, sint
   end
 end
 
@@ -168,7 +165,11 @@ function odbc_benchmarks(queries,key,dbms="MySQL")
 	end
   output_string = "$output_string Time taken by ODBC wrapper for operation $key is $temp seconds\n"
   println("Time taken for retrieving all the Inserted or Updated records by ODBC wrapper is")
-  temp = @elapsed @time retrieved = ODBC.query("select * from $Oracle_table_name")
+  if dbms == "MySQL"
+    temp = @elapsed @time retrieved = ODBC.query("select * from Employee")
+  elseif dbms == "Oracle"
+    temp = @elapsed @time retrieved = ODBC.query("select ID, Name, Salary, LastLogin, OfficeNo, JobType, h, n, to_char(z), z1, z2, cha, empno from $Oracle_table_name ORDER BY ID")
+  end
   output_string = "$output_string Time taken by ODBC wrapper for retrieving all the values after operation $key is $temp seconds\n"
   ODBC.disconnect(conn)
   return retrieved
@@ -285,7 +286,6 @@ function postgres_benchmarks(queries, key)
   return retrieved
 end
 
-#number_of_datasets = number_of_datasets+2
 
 function delete_table(dbms_wrapper,conn,table_name="Employee")
   if dbms_wrapper=="MySQL.jl"
@@ -325,13 +325,14 @@ end
 
 function mongo_benchmarks(user_choice="")
   global output_string
+  old_output_string = output_string
   client = MongoClient(Mongo_Host,Mongo_Port)
   handle = MongoCollection(client, "temp_db","DBPerf")
 
   if ("MongoUpdate" in user_choice) || ("MongoUpdate" in ARGS)
     #Update
     varcha, rfloat, datetime, tint, enume, mint, rint, bint, dfloat, dpfloat, chara, sint = create_queries(number_of_datasets)
-    temp=@elapsed @time for i = 1 : number_of_datasets-2
+    temp=@elapsed @time for i = 1 : number_of_datasets
       Mongo.update(handle,"ID" => i,Mongo.set("ID" => i, "Name" =>(varcha[i]), "Salary" =>(rfloat[i]), "LastLogin" =>(datetime[i]), "OfficeNo" =>(tint[i]), "JobType" =>(enume[i]), "h" =>(mint[i]), "n" =>(rint[i]), "z" =>(bint[i]), "z1" =>(dfloat[i]), "z2" =>(dpfloat[i]), "cha" =>(chara[i]), "empno" =>(sint[i])))
     end
     output_string = "$output_string Time taken by Mongo.jl for Operation Update is $temp\n"
@@ -343,6 +344,37 @@ function mongo_benchmarks(user_choice="")
     temp=@elapsed @time for i in Cursor
          push!(Mongo_retrieved,i)
     end
+
+      #Cross checking the retrieved values
+    Cursor = Mongo.find(handle,(Mongo.query(),Mongo.orderby("ID" => 1)))
+    flag = Bool[]
+    j=1
+    for i in Cursor
+      push!(flag,i["ID"] == j)
+      push!(flag,i["Name"] == varcha[j])
+      push!(flag,i["Salary"] == rfloat[j])
+      push!(flag,i["LastLogin"] == datetime[j])
+      push!(flag,i["OfficeNo"] ==tint[j])
+      push!(flag, i["JobType"] ==enume[j])
+      push!(flag, i["h"] ==mint[j])
+      push!(flag, i["n"] ==rint[j])
+      push!(flag, i["z"] ==bint[j])
+      push!(flag, i["z1"] ==dfloat[j])
+      push!(flag, i["z2"] ==dpfloat[j])
+      push!(flag,  i["cha"] ==chara[j])
+      push!(flag, i["empno"] ==sint[j])
+      j = j+1
+    end
+    for i in flag
+      if !i
+        output_string = old_output_string
+        output_string = "$output_string Mongo.jl: Operation Update failed the validation test\n"
+        println("Mongo.jl: Operation Update failed the validation test")
+        return
+      end
+    end
+    println("Mongo.jl passed the Validation test on operation Update")
+    output_string = "$output_string Mongo.jl passed the Validation test on operation Update\n"
     output_string = "$output_string Time taken by Mongo.jl for retrieving all the Updated records is $temp\n"
     println("Time taken by Mongo.jl for retrieving all the Updated records is $temp\n")
     return
@@ -353,21 +385,52 @@ function mongo_benchmarks(user_choice="")
 
   #Insert
   varcha, rfloat, datetime, tint, enume, mint, rint, bint, dfloat, dpfloat, chara, sint = create_queries(number_of_datasets)
-  temp=@elapsed @time for i=1 : number_of_datasets-2
+  temp=@elapsed @time for i=1 : number_of_datasets
     Mongo.insert(handle, ("ID" => i, "Name" =>(varcha[i]), "Salary" =>(rfloat[i]), "LastLogin" =>(datetime[i]), "OfficeNo" =>(tint[i]), "JobType" =>(enume[i]), "h" =>(mint[i]), "n" =>(rint[i]), "z" =>(bint[i]), "z1" =>(dfloat[i]), "z2" =>(dpfloat[i]), "cha" =>(chara[i]), "empno" =>(sint[i])))
   end
   output_string = "$output_string Time taken by Mongo.jl for operation Insert is $temp\n"
   println("Time taken by Mongo.jl for operation Insert is $temp\n")
 
   #Retrieving records after Insert
-  Cursor = Mongo.find(handle,Mongo.query())
-  Mongo_retrieved = BSONObject[]
+  #Cursor = Mongo.find(handle,Mongo.query())
+  Cursor = Mongo.find(handle,(Mongo.query(),Mongo.orderby("ID" => 1)))
   temp=@elapsed @time for i in Cursor
-       push!(Mongo_retrieved,i)
+       Mongo_retrieved =  i
   end
+  #Cross checking the retrieved values
+  Cursor = Mongo.find(handle,(Mongo.query(),Mongo.orderby("ID" => 1)))
+  flag = Bool[]
+  j=1
+  for i in Cursor
+    push!(flag,i["ID"] == j)
+    push!(flag,i["Name"] == varcha[j])
+    push!(flag,i["Salary"] == rfloat[j])
+    push!(flag,i["LastLogin"] == datetime[j])
+    push!(flag,i["OfficeNo"] ==tint[j])
+    push!(flag, i["JobType"] ==enume[j])
+    push!(flag, i["h"] ==mint[j])
+    push!(flag, i["n"] ==rint[j])
+    push!(flag, i["z"] ==bint[j])
+    push!(flag, i["z1"] ==dfloat[j])
+    push!(flag, i["z2"] ==dpfloat[j])
+    push!(flag,  i["cha"] ==chara[j])
+    push!(flag, i["empno"] ==sint[j])
+    j = j+1
+  end
+
+  for i in flag
+    if !i
+      output_string = old_output_string
+      output_string = "$output_string Mongo.jl: Operation Insert failed the validation test\n"
+      println("Mongo.jl: Operation Insert failed the validation test")
+      return
+    end
+  end
+  println("Mongo.jl passed the Validation test on operation Insert")
+  output_string = "$output_string Mongo.jl passed the Validation test on operation Insert\n"
   output_string = "$output_string Time taken by Mongo.jl for retrieving all the Inserted records is $temp\n"
   println("Time taken by Mongo.jl for retrieving all the Inserted records is $temp\n\n")
-  output_string = "$output_string NOTE:- Inorder to perform update operation on Mongo.jl, please Index the key <ID> in Mongo shell and rerun this program with following parameter: MongoUpdate\n"
+  output_string = "$output_string \n\nNOTE:- Inorder to perform update operation on Mongo.jl, please Index the key <ID> in Mongo shell and rerun this program with following parameter: MongoUpdate\n"
   output_string = "$output_string \n\n\t\t\t Example \n\n Step 1:- \$ julia DBPerf.jl Mongo.jl \n Step 2:- Create Index for key ID in Mongo shell \n\t\t \$mongo, \n\t\t mongo> use temp_db, \n\t\t mongo> db.DBPerf.ensureIndex({ID : 1})  \n Step 3:- \$ julia DBPerf.jl MongoUpdate \n"
   output_string = "$output_string \n\n\tIf you're executing this program through Julia prompt then\n\n"
   output_string = "$output_string Step 1:- julia> DBPerf(\"Mongo.jl\") \n Step 2:- Create Index for key ID in Mongo shell \n Step 3:- julia> DBPerf(\"MongoUpdate\")  \n"
@@ -386,63 +449,151 @@ function sqlite_benchmarks(queries,db,user_choice="")
     #Inorder to retrieve records from the DataStream, use following syntax sqlite_retrieved.data[Index_number], where Index_number can range from 1 to 13 in this case
   end
   output_string = "$output_string Time taken by SQLite.jl for retrieving all the records after performing operation $user_choice is $temp Seconds\n"
+  return sqlite_retrieved
 end
 
-function compare_retrieved(database,retrieved,varcha, rfloat, datetime, tint, enume, mint, rint, bint, dfloat, dpfloat, chara, sint)
+function compare_retrieved(database_and_driver,retrieved,varcha, rfloat, datetime, tint, enume, mint, rint, bint, dfloat, dpfloat, chara, sint)
+  if database_and_driver == "SQLite.jl"
+    for i=1 : number_of_datasets
+      if retrieved.data[1][i].value != i
+        return false
+      end
+      if retrieved.data[2][i].value != varcha[i]
+        return false
+      end
+      if Float16(retrieved.data[3][i].value) != rfloat[i]
+        return false
+      end
+      if (retrieved.data[4][i].value) != datetime[i]
+        return false
+      end
+      if (retrieved.data[5][i].value) != tint[i]
+        return false
+      end
+      if (retrieved.data[6][i].value) != enume[i]
+        return false
+      end
+      if (retrieved.data[7][i].value) != mint[i]
+        return false
+      end
+      if (retrieved.data[8][i].value) != rint[i]
+        return false
+      end
+      if (retrieved.data[9][i].value) != bint[i]
+        return false
+      end
+      if Float32(retrieved.data[10][i].value) != dfloat[i]
+        return false
+      end
+      if (retrieved.data[11][i].value) != dpfloat[i]
+        return false
+      end
+      if (retrieved.data[12][i].value) != chara[i]
+        return false
+      end
+      if (retrieved.data[13][i].value) != sint[i]
+        return false
+      end
+    end
+
+    return true
+  end
+
+
   flag = Bool[]
   push!(flag,retrieved[2] == varcha)
   push!(flag,retrieved[5] == tint)
   push!(flag,retrieved[6] == enume)
   push!(flag,retrieved[7] == mint)
   push!(flag,retrieved[8] == rint)
-  #Oracle failing  SELECT to_char(z) FROM Employee;
-  push!(flag,retrieved[9] == bint)
   push!(flag,retrieved[12] == chara)
   push!(flag,retrieved[13] == sint)
   for i=1 : length(retrieved[3])
     if !(Float16(retrieved[3][i]) == rfloat[i])
-        #push!(flag,false)
         return false
     end
   end
+  for i=1 : length(retrieved[10])
+    if !(Float32(retrieved[10][i]) == dfloat[i]) && !(Float32(retrieved[10][i]) == round(dfloat[i],8))
+       return false
+    end
+  end
+  for i=1 : number_of_datasets
+       if retrieved[1][i] != i
+          return false
+       end
+  end
 
-  if database == ("MySQL.jl")
+  if database_and_driver == "Oracle_ODBC.jl"
+
+     for i=1 : length(retrieved[4])
+      #Removes trailing zeros, requires MySQL.jl
+        if !(string(MySQL.MySQLDateTime(datetime[i])) == string(retrieved[4][i]))
+            return false
+        end
+     end
+
+     for i=1 : length(retrieved[9])
+         if parse(BigInt,retrieved[9][i]) != bint[i]
+              return false
+         end
+     end
+
+     for i=1 : length(retrieved[11])
+      if length(string(retrieved[11][i])) < 15
+        rj=length(string(retrieved[11][i]))
+      else
+        rj = 15
+      end
+      if length(string(dpfloat[i])) < 15
+        dj=length(string(dpfloat[i]))
+      else
+        dj = 15
+      end
+      if rj < dj
+        j = rj
+      else
+        j = dj
+      end
+
+      if !(string(retrieved[11][i])[1:j] == string(dpfloat[i])[1:j])  && !(round(retrieved[11][i],j-2) == round(dpfloat[i],j-2))
+          return false
+      end
+    end
+  else
+    push!(flag,retrieved[9] == bint)
+  end
+
+  if database_and_driver == ("MySQL.jl")
     for i=1 : length(retrieved[4])
       if !(MySQL.MySQLDateTime(datetime[i]) == retrieved[4][i])
-          #push!(flag,false)
           return false
       end
     end
     for i=1 : length(retrieved[11])
       if !(retrieved[11][i] == dpfloat[i])
-          #push!(flag,false)
           return false
       end
     end
   end
 
-  if database == "ODBC.jl"
+  if database_and_driver == "MySQL_ODBC.jl"
     for i=1 : length(retrieved[4])
       #Removes trailing zeros, requires MySQL.jl
       if !(string(MySQL.MySQLDateTime(datetime[i])) == string(retrieved[4][i]))
-          #push!(flag,false)
           return false
       end
     end
-
-    #Oracle failing
     for i=1 : length(retrieved[11])
       if !(retrieved[11][i] == dpfloat[i])
-          #push!(flag,false)
           return false
       end
     end
   end
 
-  if database == ("PostgreSQL.jl")
+  if database_and_driver == ("PostgreSQL.jl")
     for i=1 : length(retrieved[4])
       if !(string(datetime[i]) == retrieved[4][i])
-          #push!(flag,false)
           return false
       end
     end
@@ -465,16 +616,8 @@ function compare_retrieved(database,retrieved,varcha, rfloat, datetime, tint, en
 
       #As per postgresql documentation, double precision type has a precision of 15 digits hence I'm trying to round off to this value while comparing.
       if !(string(retrieved[11][i])[1:j] == string(dpfloat[i])[1:j])  && !(round(retrieved[11][i],15) == round(dpfloat[i],15))
-          #push!(flag,false)
           return false
       end
-    end
-  end
-
-  for i=1 : length(retrieved[10])
-    if !(Float32(retrieved[10][i]) == dfloat[i])
-        #push!(flag,false)
-       return false
     end
   end
 
