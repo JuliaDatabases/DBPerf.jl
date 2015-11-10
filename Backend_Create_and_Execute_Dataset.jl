@@ -29,33 +29,33 @@ function create_queries(number_of_datasets=10000)
 end
 
 function insert_queries(number_of_datasets=10000,dbms="MySQL")
-  Insert_Query = Array(String, (number_of_datasets))
+  Insert_Query = Array(String, (number_of_datasets+2))
   if dbms=="MySQL"
     Insert_Query[1] = "CREATE TABLE Employee(ID INT NOT NULL AUTO_INCREMENT, Name VARCHAR(4000), Salary FLOAT, LastLogin DATETIME, OfficeNo TINYINT, JobType ENUM('HR', 'Management', 'Accounts'), h MEDIUMINT, n INTEGER, z BIGINT, z1 DOUBLE, z2 DOUBLE PRECISION, cha CHAR, empno SMALLINT, PRIMARY KEY (ID));"
     Insert_Query[2] = "CREATE UNIQUE INDEX id_idx ON Employee(ID);"
     varcha, rfloat, datetime, tint, enume, mint, rint, bint, dfloat, dpfloat, chara, sint = create_queries(number_of_datasets)
-    for i=3 :(number_of_datasets)
-      Insert_Query[i] = "INSERT INTO Employee (Name, Salary, LastLogin, OfficeNo, JobType,h, n, z, z1, z2, cha, empno) VALUES ('$(varcha[i])', $(rfloat[i]), '$(datetime[i])', $(tint[i]), '$(enume[i])', $(mint[i]), $(rint[i]), $(bint[i]), $(dfloat[i]), $(dpfloat[i]), '$(chara[i])', $(sint[i]));"
+    for i=1 :(number_of_datasets)
+      Insert_Query[i+2] = "INSERT INTO Employee (Name, Salary, LastLogin, OfficeNo, JobType,h, n, z, z1, z2, cha, empno) VALUES ('$(varcha[i])', $(rfloat[i]), '$(datetime[i])', $(tint[i]), '$(enume[i])', $(mint[i]), $(rint[i]), $(bint[i]), $(dfloat[i]), $(dpfloat[i]), '$(chara[i])', $(sint[i]));"
     end
-    return Insert_Query
+    return Insert_Query, varcha, rfloat, datetime, tint, enume, mint, rint, bint, dfloat, dpfloat, chara, sint
   end
   if dbms=="Oracle"
     Insert_Query[1] = "CREATE TABLE $Oracle_table_name(ID INT, Name VARCHAR(4000), Salary FLOAT, LastLogin DATE, OfficeNo NUMBER(4), JobType VARCHAR2(20) CHECK( JobType IN ('HR', 'Management', 'Accounts')), h NUMBER(8), n NUMBER(11), z NUMBER(20), z1 FLOAT(25), z2 FLOAT(25), cha CHAR, empno NUMBER(6))"
     Insert_Query[2] = "create unique index id_idx on $Oracle_table_name(ID)"
     varcha, rfloat, datetime, tint, enume, mint, rint, bint, dfloat, dpfloat, chara, sint = create_queries(number_of_datasets)
-    for i=3 :(number_of_datasets)
-      Insert_Query[i] = "INSERT INTO $Oracle_table_name (ID, Name, Salary, LastLogin, OfficeNo, JobType,h, n, z, z1, z2, cha, empno) VALUES ($(i-2), '$(varcha[i])', $(rfloat[i]), TO_DATE('$(datetime[i])', 'yyyy-mm-dd hh24:mi:ss'), $(tint[i]), '$(enume[i])', $(mint[i]), $(rint[i]), $(bint[i]), $(dfloat[i]), $(dpfloat[i]), '$(chara[i])', $(sint[i]))"
+    for i=1 :(number_of_datasets)
+      Insert_Query[i+2] = "INSERT INTO $Oracle_table_name (ID, Name, Salary, LastLogin, OfficeNo, JobType,h, n, z, z1, z2, cha, empno) VALUES ($(i), '$(varcha[i])', $(rfloat[i]), TO_DATE('$(datetime[i])', 'yyyy-mm-dd hh24:mi:ss'), $(tint[i]), '$(enume[i])', $(mint[i]), $(rint[i]), $(bint[i]), $(dfloat[i]), $(dpfloat[i]), '$(chara[i])', $(sint[i]))"
     end
-    return Insert_Query
+    return Insert_Query, varcha, rfloat, datetime, tint, enume, mint, rint, bint, dfloat, dpfloat, chara, sint
   end
   if dbms == "PostgreSQL"
-    Insert_Query[1] = "CREATE TABLE Employee(ID bigserial, Name VARCHAR(4000), Salary decimal, LastLogin DATE, OfficeNo smallint, JobType VARCHAR(20) CHECK( JobType IN ('HR', 'Management', 'Accounts')), h integer, n bigint, z bigint, z1 double precision, z2 double precision, cha CHAR, empno integer)"
+    Insert_Query[1] = "CREATE TABLE Employee(ID bigserial, Name VARCHAR(4000), Salary decimal, LastLogin timestamp, OfficeNo smallint, JobType VARCHAR(20) CHECK( JobType IN ('HR', 'Management', 'Accounts')), h integer, n bigint, z bigint, z1 double precision, z2 double precision, cha CHAR, empno integer)"
     Insert_Query[2] = "create unique index id_idx on Employee(ID)"
     varcha, rfloat, datetime, tint, enume, mint, rint, bint, dfloat, dpfloat, chara, sint = create_queries(number_of_datasets)
-  	for i=3 : (number_of_datasets)
-		  Insert_Query[i] = "INSERT INTO Employee (ID, Name, Salary, LastLogin, OfficeNo, JobType,h, n, z, z1, z2, cha, empno) VALUES ($(i-2), '$(varcha[i])', $(rfloat[i]), '$(datetime[i])', $(tint[i]), '$(enume[i])', $(mint[i]), $(rint[i]), $(bint[i]), $(dfloat[i]), $(dpfloat[i]), '$(chara[i])', $(sint[i]));"
+  	for i=1 : (number_of_datasets)
+		  Insert_Query[i+2] = "INSERT INTO Employee (ID, Name, Salary, LastLogin, OfficeNo, JobType,h, n, z, z1, z2, cha, empno) VALUES ($(i), '$(varcha[i])', $(rfloat[i]), '$(datetime[i])', $(tint[i]), '$(enume[i])', $(mint[i]), $(rint[i]), $(bint[i]), $(dfloat[i]), $(dpfloat[i]), '$(chara[i])', $(sint[i]));"
   	end
-	  return Insert_Query
+	  return Insert_Query, varcha, rfloat, datetime, tint, enume, mint, rint, bint, dfloat, dpfloat, chara, sint
   end
 
   if dbms == "SQLite"
@@ -80,13 +80,13 @@ function update_queries(number_of_datasets=10000,dbms="MySQL")
     return Update_Query
   end
   if (dbms=="MySQL" || dbms=="PostgreSQL")
-    number_of_datasets = number_of_datasets - 2
+    #number_of_datasets = number_of_datasets - 2
     Update_Query = Array(String, (number_of_datasets))
     varcha, rfloat, datetime, tint, enume, mint, rint, bint, dfloat, dpfloat, chara, sint = create_queries(number_of_datasets)
     for i=1 : (number_of_datasets)
       Update_Query[i] = "UPDATE Employee SET Name='$(varcha[i])', Salary=$(rfloat[i]), LastLogin='$(datetime[i])', OfficeNo=$(tint[i]), JobType='$(enume[i])', h=$(mint[i]), n=$(rint[i]), z=$(bint[i]), z1=$(dfloat[i]), z2=$(dpfloat[i]), cha='$(chara[i])', empno=$(sint[i]) where ID = $i;"
     end
-    return Update_Query
+    return Update_Query, varcha, rfloat, datetime, tint, enume, mint, rint, bint, dfloat, dpfloat, chara, sint
   elseif(dbms=="Oracle")
     number_of_datasets = number_of_datasets - 2
     Update_Query = Array(String, (number_of_datasets))
@@ -128,9 +128,10 @@ function mysql_benchmarks(queries,key,use_prepare=0)
     output_string = "$output_string Time taken by MySQL wrapper for operation $key is $temp seconds\n"
   end
   println("Time taken for retrieving all the Inserted or Updated records by MySQL wrapper is ")
-  temp = @elapsed @time MySQL.mysql_execute_query(conn, "select * from Employee")
+  temp = @elapsed @time retrieved = MySQL.mysql_execute_query(conn, "select * from Employee")
   output_string = "$output_string Time taken by MySQL wrapper for retrieving all the values after operation $key is $temp seconds\n"
   mysql_disconnect(conn)
+  return retrieved
 end
 
 function odbc_benchmarks(queries,key,dbms="MySQL")
@@ -167,9 +168,10 @@ function odbc_benchmarks(queries,key,dbms="MySQL")
 	end
   output_string = "$output_string Time taken by ODBC wrapper for operation $key is $temp seconds\n"
   println("Time taken for retrieving all the Inserted or Updated records by ODBC wrapper is")
-  temp = @elapsed @time ODBC.query("select * from $Oracle_table_name")
+  temp = @elapsed @time retrieved = ODBC.query("select * from $Oracle_table_name")
   output_string = "$output_string Time taken by ODBC wrapper for retrieving all the values after operation $key is $temp seconds\n"
   ODBC.disconnect(conn)
+  return retrieved
 end
 
 function JDBC_init(dbms="MySQL")
@@ -178,7 +180,7 @@ function JDBC_init(dbms="MySQL")
     try
       JavaCall.addClassPath(JDBC_MySQL_Class_Path)
       JDBC.init()
-      props = ["user"=> JDBC_MySQL_Username, "password" => JDBC_MySQL_Password]
+      props = Dict("user"=> JDBC_MySQL_Username, "password" => JDBC_MySQL_Password)
       conn = DriverManager.getConnection(MySQL_JDBC_URL, props)
       stmt = createStatement(conn)
       delete_table("JDBC.jl",stmt)
@@ -194,7 +196,7 @@ function JDBC_init(dbms="MySQL")
       url = Oracle_JDBC_URL
       JavaCall.addClassPath(classPath)
       JDBC.init()
-      props = ["user" => JDBC_Oracle_Username, "password" => JDBC_Oracle_Password]
+      props = Dict("user" => JDBC_Oracle_Username, "password" => JDBC_Oracle_Password)
       conn = DriverManager.getConnection(url, props)
       stmt = createStatement(conn)
       delete_table("JDBC.jl",stmt, Oracle_table_name)
@@ -277,12 +279,13 @@ function postgres_benchmarks(queries, key)
 	end
   output_string = "$output_string Time taken by PostGres for operation $key is $temp\n"
 	println("Time taken for retrieving all the Inserted or Updated records by PostGres wrapper is")
-	temp = @elapsed @time fetchdf(PostgreSQL.execute(PostgreSQL.prepare(conn, "select * from Employee")))
+	temp = @elapsed @time retrieved = fetchdf(PostgreSQL.execute(PostgreSQL.prepare(conn, "select * from Employee order by id")))
   output_string = "$output_string Time taken by PostGres wrapper for retrieving all the values after operation $key is $temp seconds\n"
 	PostgreSQL.disconnect(conn)
+  return retrieved
 end
 
-number_of_datasets = number_of_datasets+2
+#number_of_datasets = number_of_datasets+2
 
 function delete_table(dbms_wrapper,conn,table_name="Employee")
   if dbms_wrapper=="MySQL.jl"
@@ -383,4 +386,103 @@ function sqlite_benchmarks(queries,db,user_choice="")
     #Inorder to retrieve records from the DataStream, use following syntax sqlite_retrieved.data[Index_number], where Index_number can range from 1 to 13 in this case
   end
   output_string = "$output_string Time taken by SQLite.jl for retrieving all the records after performing operation $user_choice is $temp Seconds\n"
+end
+
+function compare_retrieved(database,retrieved,varcha, rfloat, datetime, tint, enume, mint, rint, bint, dfloat, dpfloat, chara, sint)
+  flag = Bool[]
+  push!(flag,retrieved[2] == varcha)
+  push!(flag,retrieved[5] == tint)
+  push!(flag,retrieved[6] == enume)
+  push!(flag,retrieved[7] == mint)
+  push!(flag,retrieved[8] == rint)
+  #Oracle failing  SELECT to_char(z) FROM Employee;
+  push!(flag,retrieved[9] == bint)
+  push!(flag,retrieved[12] == chara)
+  push!(flag,retrieved[13] == sint)
+  for i=1 : length(retrieved[3])
+    if !(Float16(retrieved[3][i]) == rfloat[i])
+        #push!(flag,false)
+        return false
+    end
+  end
+
+  if database == ("MySQL.jl")
+    for i=1 : length(retrieved[4])
+      if !(MySQL.MySQLDateTime(datetime[i]) == retrieved[4][i])
+          #push!(flag,false)
+          return false
+      end
+    end
+    for i=1 : length(retrieved[11])
+      if !(retrieved[11][i] == dpfloat[i])
+          #push!(flag,false)
+          return false
+      end
+    end
+  end
+
+  if database == "ODBC.jl"
+    for i=1 : length(retrieved[4])
+      #Removes trailing zeros, requires MySQL.jl
+      if !(string(MySQL.MySQLDateTime(datetime[i])) == string(retrieved[4][i]))
+          #push!(flag,false)
+          return false
+      end
+    end
+
+    #Oracle failing
+    for i=1 : length(retrieved[11])
+      if !(retrieved[11][i] == dpfloat[i])
+          #push!(flag,false)
+          return false
+      end
+    end
+  end
+
+  if database == ("PostgreSQL.jl")
+    for i=1 : length(retrieved[4])
+      if !(string(datetime[i]) == retrieved[4][i])
+          #push!(flag,false)
+          return false
+      end
+    end
+    for i=1 : length(retrieved[11])
+      if length(string(retrieved[11][i])) < 15
+        rj=length(string(retrieved[11][i]))
+      else
+        rj = 15
+      end
+      if length(string(dpfloat[i])) < 15
+        dj=length(string(dpfloat[i]))
+      else
+        dj = 15
+      end
+      if rj < dj
+        j = rj
+      else
+        j = dj
+      end
+
+      #As per postgresql documentation, double precision type has a precision of 15 digits hence I'm trying to round off to this value while comparing.
+      if !(string(retrieved[11][i])[1:j] == string(dpfloat[i])[1:j])  && !(round(retrieved[11][i],15) == round(dpfloat[i],15))
+          #push!(flag,false)
+          return false
+      end
+    end
+  end
+
+  for i=1 : length(retrieved[10])
+    if !(Float32(retrieved[10][i]) == dfloat[i])
+        #push!(flag,false)
+       return false
+    end
+  end
+
+  for i in flag
+    if !i
+        return i
+    end
+  end
+  println("Validation test passed")
+  return true
 end

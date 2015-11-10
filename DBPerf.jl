@@ -18,26 +18,88 @@ function DBPerf(a1="",a2="",a3="",a4="",a5="",a6="")
     println("\n\n******************  END OF SUMMARY   ******************\n\n")
     return
   end
+
   if ("MySQL.jl" in user_choice) || ("MySQL.jl" in ARGS)
     output_string = "$output_string \n\n *******  MYSQL.jl  ******* \n"
-    mysql_benchmarks(insert_queries(number_of_datasets,"MySQL"),"Insert","MySQL")
-    mysql_benchmarks(update_queries(number_of_datasets,"MySQL"),"Update","MySQL")
+    old_output_string = output_string
+    Queries, varcha, rfloat, datetime, tint, enume, mint, rint, bint, dfloat, dpfloat, chara, sint = insert_queries(number_of_datasets,"MySQL")
+    retrieved = mysql_benchmarks(Queries,"Insert","MySQL")
+    println("Cross checking the correctness of retrieved values")
+    if !(compare_retrieved("MySQL.jl",retrieved,varcha, rfloat, datetime, tint, enume, mint, rint, bint, dfloat, dpfloat, chara, sint))
+      output_string = old_output_string
+      output_string = "$output_string MySQL.jl: Operation Insert failed the validation test\n"
+    end
+
+    old_output_string = output_string
+    Queries, varcha, rfloat, datetime, tint, enume, mint, rint, bint, dfloat, dpfloat, chara, sint = update_queries(number_of_datasets,"MySQL")
+    retrieved = mysql_benchmarks(Queries,"Update","MySQL")
+    println("Cross checking the correctness of retrieved values")
+    if !(compare_retrieved("MySQL.jl",retrieved,varcha, rfloat, datetime, tint, enume, mint, rint, bint, dfloat, dpfloat, chara, sint))
+      output_string = old_output_string
+      output_string = "$output_string MySQL.jl: Operation Update failed the validation test\n"
+    end
   end
 
   if ("PostgreSQL.jl" in user_choice) || ("PostgreSQL.jl" in ARGS)
     output_string = "$output_string \n\n *******  PostgreSQL.jl  ******* \n"
-    postgres_benchmarks(insert_queries(number_of_datasets,"PostgreSQL"), "Insert")
-    postgres_benchmarks(update_queries(number_of_datasets,"PostgreSQL"), "Update")
+    old_output_string = output_string
+    Queries, varcha, rfloat, datetime, tint, enume, mint, rint, bint, dfloat, dpfloat, chara, sint = insert_queries(number_of_datasets,"PostgreSQL")
+    retrieved = postgres_benchmarks(Queries, "Insert")
+    println("Cross checking the correctness of retrieved values")
+    if !(compare_retrieved("PostgreSQL.jl",retrieved,varcha, rfloat, datetime, tint, enume, mint, rint, bint, dfloat, dpfloat, chara, sint))
+      output_string = old_output_string
+      output_string = "$output_string PostgreSQL.jl: Operation Insert failed the validation test\n"
+    end
+    old_output_string = output_string
+    Queries, varcha, rfloat, datetime, tint, enume, mint, rint, bint, dfloat, dpfloat, chara, sint = update_queries(number_of_datasets,"PostgreSQL")
+    retrieved = postgres_benchmarks(Queries, "Update")
+    println("Cross checking the correctness of retrieved values")
+    if !(compare_retrieved("PostgreSQL.jl",retrieved,varcha, rfloat, datetime, tint, enume, mint, rint, bint, dfloat, dpfloat, chara, sint))
+      output_string = old_output_string
+      output_string = "$output_string PostgreSQL.jl: Operation Update failed the validation test\n"
+    end
   end
 
   if ("ODBC.jl" in user_choice) || ("ODBC.jl" in ARGS)
     output_string = "$output_string \n\n *******  ODBC.jl  ******* \n"
     println("Testing ODBC.jl over MySQL Database")
     output_string = "$output_string       \nTesting ODBC.jl over MySQL Database\n\n"
-    odbc_benchmarks(insert_queries(number_of_datasets,"MySQL"),"Insert","MySQL")
-    odbc_benchmarks(update_queries(number_of_datasets,"MySQL"),"Update","MySQL")
+
+    old_output_string = output_string
+    Queries, varcha, rfloat, datetime, tint, enume, mint, rint, bint, dfloat, dpfloat, chara, sint = insert_queries(number_of_datasets,"MySQL")
+    retrieved = odbc_benchmarks(Queries,"Insert","MySQL")
+    println("Cross checking the correctness of retrieved values")
+    if !(compare_retrieved("ODBC.jl",retrieved,varcha, rfloat, datetime, tint, enume, mint, rint, bint, dfloat, dpfloat, chara, sint))
+      output_string = old_output_string
+      output_string = "$output_string ODBC.jl: Operation Insert failed the validation test\n"
+    end
+
+    old_output_string = output_string
+    Queries, varcha, rfloat, datetime, tint, enume, mint, rint, bint, dfloat, dpfloat, chara, sint = update_queries(number_of_datasets,"MySQL")
+    retrieved = odbc_benchmarks(Queries,"Update","MySQL")
+    println("Cross checking the correctness of retrieved values")
+    if !(compare_retrieved("ODBC.jl",retrieved,varcha, rfloat, datetime, tint, enume, mint, rint, bint, dfloat, dpfloat, chara, sint))
+      output_string = old_output_string
+      output_string = "$output_string ODBC.jl: Operation Update failed the validation test\n"
+    end
+
     println("Testing ODBC.jl over Oracle Database")
     output_string = "\n$output_string       \nTesting ODBC.jl over Oracle Database\n\n"
+
+    old_output_string = output_string
+    Queries, varcha, rfloat, datetime, tint, enume, mint, rint, bint, dfloat, dpfloat, chara, sint = insert_queries(number_of_datasets,"Oracle")
+    retrieved = odbc_benchmarks(Queries,"Insert","Oracle")
+    println("Cross checking the correctness of retrieved values")
+    if !(compare_retrieved("ODBC.jl",retrieved,varcha, rfloat, datetime, tint, enume, mint, rint, bint, dfloat, dpfloat, chara, sint))
+      output_string = old_output_string
+      output_string = "$output_string ODBC.jl: Operation Insert failed the validation test\n"
+    end
+
+
+
+
+
+
     odbc_benchmarks(insert_queries(number_of_datasets,"Oracle"),"Insert","Oracle")
     odbc_benchmarks(update_queries(number_of_datasets,"Oracle"),"Update","Oracle")
   end
