@@ -495,7 +495,6 @@ function compare_retrieved(database_and_driver,retrieved,varcha, rfloat, datetim
         return false
       end
     end
-
     return true
   end
 
@@ -513,9 +512,11 @@ function compare_retrieved(database_and_driver,retrieved,varcha, rfloat, datetim
         return false
     end
   end
-  for i=1 : length(retrieved[10])
-    if !(Float32(retrieved[10][i]) == dfloat[i]) && !(Float32(retrieved[10][i]) == round(dfloat[i],8))
-       return false
+  if database_and_driver != "Oracle_ODBC.jl"
+    for i=1 : length(retrieved[10])
+      if !(Float32(retrieved[10][i]) == dfloat[i]) && !(Float32(retrieved[10][i]) == round(dfloat[i],8))
+         return false
+      end
     end
   end
   for i=1 : number_of_datasets
@@ -525,6 +526,28 @@ function compare_retrieved(database_and_driver,retrieved,varcha, rfloat, datetim
   end
 
   if database_and_driver == "Oracle_ODBC.jl"
+
+      for i=1 : length(retrieved[10])
+        if length(string(retrieved[10][i])) < 15
+          rj=length(string(retrieved[10][i]))
+        else
+          rj = 15
+        end
+        if length(string(dfloat[i])) < 15
+          dj=length(string(dfloat[i]))
+        else
+          dj = 15
+        end
+        if rj < dj
+          j = rj
+        else
+          j = dj
+        end
+        #Adjusting to the rounding laws
+        if !(string(retrieved[10][i])[1:j-1] == string(dfloat[i])[1:j-1])  && !(Float32(round(retrieved[10][i],j-2)) == round(dfloat[i],j-2))
+            return false
+        end
+      end
 
      for i=1 : length(retrieved[4])
       #Removes trailing zeros, requires MySQL.jl

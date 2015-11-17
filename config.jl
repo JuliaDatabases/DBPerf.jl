@@ -1,5 +1,5 @@
 #Assign the variable number_of_datasets with an Integer, this will indicate the number of Insert and Update queries that will be created and executed using this program
-global number_of_datasets = 100
+global number_of_datasets = 10000
 
 #Feel free to comment the unused driver blocks
 
