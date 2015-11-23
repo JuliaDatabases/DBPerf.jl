@@ -6,12 +6,14 @@
   - DBI         , Pkg.clone("https://github.com/JuliaDB/DBI.jl.git")
   - PostgreSQL  , Pkg.clone("https://github.com/JuliaDB/PostgreSQL.jl.git")
   - Mongo       , Pkg.clone("https://github.com/pzion/Mongo.jl.git")
+  - SQLite      , Pkg.clone("https://github.com/JuliaDB/SQLite.jl.git")
 
-2) You will need either one (or more) of the following DBMS softwares configured such that they are able to communicate with the aforementioned packagess
+2) You will need either one (or more) of the following DBMS softwares configured such that they are able to communicate with the aforementioned packages
   - MySQL RDBMS
   - Oracle RDBMS
   - PostgreSQL
   - MongoDB 
+  - SQLite
 
 3) If you're planning on using JDBC then you require Java Class Libraries
 
