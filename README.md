@@ -45,3 +45,4 @@ Above example will conduct a performance test on Database driver ODBC.jl and JDB
 3. Creating an automated script that pulls the latest code from all the database drivers to conduct a performance test and automatically update the performance table every week.
 4. Use “Prepare” functionality (If available) to update, insert and retrieve records.
 5. Create performance tests over PostgreSQL, SQLite using JDBC.jl and ODBC.jl
+6. Use DBAPI interfaces for all the database drivers (Wherever DBAPI is implemented)
