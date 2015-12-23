@@ -96,7 +96,7 @@ function update_queries(number_of_datasets=10000,dbms="MySQL")
 end
 
 
-function mysql_benchmarks(queries,key,use_prepare=0)
+function mysql_benchmarks(queries,key)
   global output_string
   try
     conn = mysql_connect(MySQL_Host, MySQL_Username, MySQL_Password, MySQL_Database)
@@ -110,28 +110,18 @@ function mysql_benchmarks(queries,key,use_prepare=0)
     delete_table("MySQL.jl",conn)
   end
   println("Time taken by MySQL wrapper for operation $key is")
-  if use_prepare ==1
-    stmt = mysql_stmt_init(conn)
-    temp = @elapsed @time for i = 1:size(queries,1)
-      mysql_stmt_prepare(stmt, queries[i])
-      mysql_stmt_execute(stmt)
-    end
-    output_string = "$output_string Time taken by MySQL wrapper for operation $key is $temp seconds\n"
-    mysql_stmt_close(stmt)
-  else
-    temp = @elapsed @time for i = 1:size(queries,1)
-      mysql_execute_query(conn, queries[i])
-    end
-    output_string = "$output_string Time taken by MySQL wrapper for operation $key is $temp seconds\n"
+  temp = @elapsed @time for i = 1:size(queries,1)
+    mysql_execute_query(conn, queries[i])
   end
+  output_string = "$output_string Time taken by MySQL wrapper for operation $key is $temp seconds\n"
   println("Time taken for retrieving all the Inserted or Updated records by MySQL wrapper is ")
-  temp = @elapsed @time retrieved = MySQL.mysql_execute_query(conn, "select * from Employee")
+  temp = @elapsed @time retrieved = MySQL.mysql_execute_query(conn, "select ID, Name, Salary, DATE_FORMAT(LastLogin, '%Y-%m-%d %H:%i:%S'), OfficeNo, JobType,h, n, z, z1, z2, cha, empno from Employee")
   output_string = "$output_string Time taken by MySQL wrapper for retrieving all the values after operation $key is $temp seconds\n"
   mysql_disconnect(conn)
   return retrieved
 end
 
-function odbc_benchmarks(queries,key,dbms="MySQL")
+function odbc_benchmarks(queries,key,dbms)
   global output_string
   if dbms=="MySQL"
     try
@@ -149,6 +139,7 @@ function odbc_benchmarks(queries,key,dbms="MySQL")
   elseif dbms == "Oracle"
     try
       conn = ODBC.connect(Oracle_DSN,usr=Oracle_Username,pwd=Oracle_Password)
+      ODBC.disconnect(conn)
     catch
       println("ODBC.jl: Oracle connection failed")
       output_string = "$output_string ODBC.jl: Oracle connection failed\n"
@@ -158,6 +149,19 @@ function odbc_benchmarks(queries,key,dbms="MySQL")
     if key == "Insert"
       delete_table("ODBC.jl",conn,Oracle_table_name)
     end
+  elseif dbms == "PostGres"
+    try
+      conn = ODBC.connect(ODBC_PostGres_dsn,usr=ODBC_PostGres_username,pwd=ODBC_PostGres_password)
+      ODBC.disconnect(conn)
+    catch
+      println("ODBC.jl: PostGres connection failed")
+      output_string = "$output_string ODBC.jl: PostGres connection failed\n"
+      return
+    end
+    conn = ODBC.connect(ODBC_PostGres_dsn,usr=ODBC_PostGres_username,pwd=ODBC_PostGres_password)
+    if key == "Insert"
+      delete_table("ODBC.jl",conn)
+    end
   end
 	println("Time taken by ODBC wrapper for operation $key is")
 	temp = @elapsed @time for i = 1:size(queries,1)
@@ -166,9 +170,11 @@ function odbc_benchmarks(queries,key,dbms="MySQL")
   output_string = "$output_string Time taken by ODBC wrapper for operation $key is $temp seconds\n"
   println("Time taken for retrieving all the Inserted or Updated records by ODBC wrapper is")
   if dbms == "MySQL"
-    temp = @elapsed @time retrieved = ODBC.query("select * from Employee")
+    temp = @elapsed @time retrieved = ODBC.query("select ID, Name, Salary, DATE_FORMAT(LastLogin, '%Y-%m-%d %H:%i:%S'), OfficeNo, JobType,h, n, z, z1, z2, cha, empno from Employee")
   elseif dbms == "Oracle"
-    temp = @elapsed @time retrieved = ODBC.query("select ID, Name, Salary, LastLogin, OfficeNo, JobType, h, n, to_char(z), z1, z2, cha, empno from $Oracle_table_name ORDER BY ID")
+    temp = @elapsed @time retrieved = ODBC.query("select ID, Name, Salary, to_char(LastLogin, 'yyyy-mm-dd hh24:mi:ss'), OfficeNo, JobType, h, to_char(n), to_char(z), z1, z2, cha, empno from $Oracle_table_name ORDER BY ID")
+  elseif dbms == "PostGres"
+    temp = @elapsed @time retrieved = ODBC.query("select ID, Name, Salary, to_char(LastLogin, 'yyyy-mm-dd hh24:mi:ss'), OfficeNo, JobType,h, n, z, z1, z2, cha, empno from Employee ORDER BY ID")
   end
   output_string = "$output_string Time taken by ODBC wrapper for retrieving all the values after operation $key is $temp seconds\n"
   ODBC.disconnect(conn)
@@ -193,12 +199,10 @@ function JDBC_init(dbms="MySQL")
     end
   elseif dbms == "Oracle"
     try
-      classPath = JDBC_Oracle_Connector_Path
-      url = Oracle_JDBC_URL
-      JavaCall.addClassPath(classPath)
+      JavaCall.addClassPath(JDBC_Oracle_Connector_Path)
       JDBC.init()
       props = Dict("user" => JDBC_Oracle_Username, "password" => JDBC_Oracle_Password)
-      conn = DriverManager.getConnection(url, props)
+      conn = DriverManager.getConnection(Oracle_JDBC_URL, props)
       stmt = createStatement(conn)
       delete_table("JDBC.jl",stmt, Oracle_table_name)
       return stmt
@@ -222,37 +226,20 @@ function jdbc_benchmarks(queries, key, stmt,dbms)
 	println("Time taken for retrieving all the Inserted or Updated records by JDBC wrapper is")
   if dbms == "Oracle"
     tmp = @elapsed @time begin
-      rs = executeQuery(stmt, "select * from $Oracle_table_name")
+      rs = executeQuery(stmt, "select ID, Name, Salary, to_char(LastLogin, 'yyyy-mm-dd hh24:mi:ss'), OfficeNo, JobType, h, to_char(n), to_char(z), z1, z2, cha, empno from $Oracle_table_name ORDER BY ID")
       JDBC_retrieved = readtable(rs)
-      #JDBC.jl is not extracting floating point numbers from Oracle, hence following steps
-      i=1
-      rs = executeQuery(stmt, "select * from $Oracle_table_name")
-      for r in rs
-         JDBC_retrieved[:Z2][i] = getFloat(r,"z2")
-         JDBC_retrieved[:Z][i] = getFloat(r,"z")
-         JDBC_retrieved[:Z1][i] = getFloat(r,"z1")
-         JDBC_retrieved[:SALARY][i] = getFloat(r,"Salary")
-         i=i+1
-      end
     end
     output_string = "$output_string Time taken by JDBC wrapper for retrieving all the values after operation $key is $tmp seconds\n"
+    return JDBC_retrieved
   end
 
   if dbms == "MySQL"
     tmp=@elapsed @time begin
-      rs = executeQuery(stmt, "select ID, Name, Salary, LastLogin, OfficeNo, JobType,h, n, z, z1, z2, cha from Employee")
+      rs = JDBC.executeQuery(stmt, "select ID, Name, Salary, DATE_FORMAT(LastLogin, '%Y-%m-%d %H:%i:%S'), OfficeNo, JobType,h, n, z, z1, z2, cha, empno from Employee")
       JDBC_retrieved = readtable(rs)
-      #JDBC.jl is not extracting column empno from MySQL, hence following steps
-      i=1
-      temp = fill(0,size(JDBC_retrieved)[1])
-      rs = executeQuery(stmt, "select empno from Employee")
-      for r in rs
-           temp[i] = getInt(r,"empno")
-           i = i+1
-      end
-      JDBC_retrieved[:empno] = temp
     end
     output_string = "$output_string Time taken by JDBC wrapper for retrieving all the values after operation $key is $tmp seconds\n"
+    return JDBC_retrieved
   end
 end
 
@@ -260,7 +247,7 @@ end
 function postgres_benchmarks(queries, key)
   global output_string
   try
-	  conn = PostgreSQL.connect(Postgres,PostGres_Host,  PostGres_Username, PostGres_Password, PostGres_Database, PostGres_Port_number)
+	  conn = PostgreSQL.connect(Postgres, PostGres_Host,  PostGres_Username, PostGres_Password, PostGres_Database, PostGres_Port_number)
   catch
     println("PostgreSQL connection failed")
     output_string = "$output_string PostgreSQL.jl: PostgreSQL connection failed\n"
@@ -310,7 +297,7 @@ function delete_table(dbms_wrapper,conn,table_name="Employee")
     end
   elseif dbms_wrapper == "JDBC.jl"
     try
-      executeUpdate(stmt,"drop table $table_name")
+      JDBC.executeUpdate(conn,"drop table $table_name")
     catch
       return
     end
@@ -452,66 +439,256 @@ function sqlite_benchmarks(queries,db,user_choice="")
   return sqlite_retrieved
 end
 
-function compare_retrieved(database_and_driver,retrieved,varcha, rfloat, datetime, tint, enume, mint, rint, bint, dfloat, dpfloat, chara, sint)
+function display_errors(number_of_errors, retrieved_names)
+  global output_string
+  for i=1 : length(retrieved_names)
+    if number_of_errors[i] > 0
+      output_string = "$output_string Over $(number_of_errors[i]) value(s) out of $number_of_datasets values from column $(retrieved_names[i]) did not match the inserted data. \n"
+      println("Over $(number_of_errors[i]) value(s) out of $number_of_datasets values from column $(retrieved_names[i]) did not match the inserted data.")
+    end
+  end
+end
+
+function datatype_conversions(database_and_driver, retrieved, varcha, rfloat, datetime, tint, enume, mint, rint, bint, dfloat, dpfloat, chara, sint)
+  # DBMS's are inconsistent in maintaining the data types and data formats, hence we need to normalize the retrieved data before performing a validation test on them.
+  for i =1 : number_of_datasets
+     retrieved[3][i] = Float16(retrieved[3][i])
+     retrieved[10][i] = Float32(retrieved[10][i])
+  end
+  # Oracle sends all the Integers in exponential form, so we are retrieving them as String and converting them to Integer in here for comparison
+  if database_and_driver == "Oracle_JDBC.jl" || database_and_driver == "Oracle_ODBC.jl"
+    temp1 = fill(0,number_of_datasets)
+    temp = fill(0,number_of_datasets)
+    for i=1 : number_of_datasets
+      temp[i] = parse(Int,retrieved[8][i])
+      temp1[i] = parse(Int,retrieved[9][i])
+    end
+    retrieved[8] = temp
+    retrieved[9] = temp1
+  end
+  return retrieved, varcha, rfloat, datetime, tint, enume, mint, rint, bint, dfloat, dpfloat, chara, sint
+end
+
+function compare_retrieved(database_and_driver, operation, retrieved, varcha, rfloat, datetime, tint, enume, mint, rint, bint, dfloat, dpfloat, chara, sint, float_tolerance, double_tolerance)
+  number_of_errors = fill(0,13)
+  global output_string
   if database_and_driver == "SQLite.jl"
     for i=1 : number_of_datasets
       if retrieved.data[1][i].value != i
-        return false
+        number_of_errors[1] = number_of_errors[1] + 1
       end
       if retrieved.data[2][i].value != varcha[i]
-        return false
+        number_of_errors[2] = number_of_errors[2] + 1
       end
       if Float16(retrieved.data[3][i].value) != rfloat[i]
-        return false
+        number_of_errors[3] = number_of_errors[3] + 1
       end
       if (retrieved.data[4][i].value) != datetime[i]
-        return false
+        number_of_errors[4] = number_of_errors[4] + 1
       end
       if (retrieved.data[5][i].value) != tint[i]
-        return false
+        number_of_errors[5] = number_of_errors[5] + 1
       end
       if (retrieved.data[6][i].value) != enume[i]
-        return false
+        number_of_errors[6] = number_of_errors[6] + 1
       end
       if (retrieved.data[7][i].value) != mint[i]
-        return false
+        number_of_errors[7] = number_of_errors[7] + 1
       end
       if (retrieved.data[8][i].value) != rint[i]
-        return false
+        number_of_errors[8] = number_of_errors[8] + 1
       end
       if (retrieved.data[9][i].value) != bint[i]
-        return false
+        number_of_errors[9] = number_of_errors[9] + 1
       end
       if Float32(retrieved.data[10][i].value) != dfloat[i]
-        return false
+        number_of_errors[10] = number_of_errors[10] + 1
       end
       if (retrieved.data[11][i].value) != dpfloat[i]
-        return false
+        number_of_errors[11] = number_of_errors[11] + 1
       end
       if (retrieved.data[12][i].value) != chara[i]
-        return false
+        number_of_errors[12] = number_of_errors[12] + 1
       end
       if (retrieved.data[13][i].value) != sint[i]
-        return false
+        number_of_errors[13] = number_of_errors[13] + 1
       end
     end
-    return true
+    if sum(number_of_errors) == 0
+      output_string = "$output_string $database_and_driver : Operation $operation passed the validation test\n"
+      return true
+    else
+      output_string = "$output_string $database_and_driver : Operation $operation failed the validation test\n"
+      println("$database_and_driver: Operation $operation failed the validation test")
+      display_errors(number_of_errors, names(retrieved))
+      output_string = "$output_string \n"
+      return false
+    end
+  end
+  retrieved, varcha, rfloat, datetime, tint, enume, mint, rint, bint, dfloat, dpfloat, chara, sint = datatype_conversions(database_and_driver, retrieved, varcha, rfloat, datetime, tint, enume, mint, rint, bint, dfloat, dpfloat, chara, sint)
+  for i=1 : number_of_datasets
+      if retrieved[1][i] != i
+        number_of_errors[1] = number_of_errors[1] +1
+      end
+      if retrieved[2][i] != varcha[i]
+        number_of_errors[2] = number_of_errors[2] +1
+      end
+      if round(retrieved[3][i],float_tolerance) != round(rfloat[i], float_tolerance)
+        number_of_errors[3] = number_of_errors[3] +1
+      end
+      if retrieved[4][i] != datetime[i]
+        number_of_errors[4] = number_of_errors[4] +1
+      end
+      if retrieved[5][i] != tint[i]
+        number_of_errors[5] = number_of_errors[5] +1
+      end
+      if retrieved[6][i] != enume[i]
+        number_of_errors[6] = number_of_errors[6] +1
+      end
+      if retrieved[7][i] != mint[i]
+        number_of_errors[7] = number_of_errors[7] +1
+      end
+      if retrieved[8][i] !=  rint[i]
+        number_of_errors[8] = number_of_errors[8] +1
+      end
+      if retrieved[9][i] != bint[i]
+        number_of_errors[9] = number_of_errors[9] +1
+      end
+      if round(retrieved[10][i],float_tolerance) != round(dfloat[i],float_tolerance)
+        number_of_errors[10] = number_of_errors[10] +1
+      end
+      if round(retrieved[11][i], double_tolerance) != round(dpfloat[i], double_tolerance)
+        number_of_errors[11] = number_of_errors[11] +1
+      end
+      if retrieved[12][i] != chara[i]
+        number_of_errors[12] = number_of_errors[12] +1
+      end
+      if retrieved[13][i] != sint[i]
+        number_of_errors[13] = number_of_errors[13] +1
+      end
+    end
+    if sum(number_of_errors) == 0
+      output_string = "$output_string $database_and_driver : Operation $operation passed the validation test\n"
+      return true
+    else
+      output_string = "$output_string $database_and_driver : Operation $operation failed the validation test\n"
+      println("$database_and_driver: Operation $operation failed the validation test")
+      display_errors(number_of_errors, names(retrieved))
+      output_string = "$output_string \n"
+      return false
+    end
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  #=
+  # Saving all the datatypes of inserted values
+
+
+  if !datatype_tolerance
+    for i=1 : number_of_datasets
+      if retrieved[1][i] != i
+        number_of_errors[1] = number_of_errors[1] +1
+        expected_datatype[i] = typeof(i)
+      end
+      if retrieved[2][i] != varcha[i]
+        number_of_errors[2] = number_of_errors[2] +1
+        expected_datatype[i] = typeof(varcha[i])
+      end
+      if retrieved[3][i] != rfloat[i]
+        number_of_errors[3] = number_of_errors[3] +1
+        expected_datatype[i] = typeof(rfloat[i])
+      end
+      if retrieved[4][i] != datetime[i]
+        number_of_errors[4] = number_of_errors[4] +1
+        expected_datatype[i] = typeof(datetime[i])
+      end
+      if retrieved[5][i] != tint[i]
+        number_of_errors[5] = number_of_errors[5] +1
+        expected_datatype[i] = typeof(tint[i])
+      end
+      if retrieved[6][i] != enume[i]
+        number_of_errors[6] = number_of_errors[6] +1
+        expected_datatype[i] = typeof(enume[i])
+      end
+      if retrieved[7][i] != mint[i]
+        number_of_errors[7] = number_of_errors[7] +1
+        expected_datatype[i] = typeof(mint[i])
+      end
+      if retrieved[8][i] !=  rint[i]
+        number_of_errors[8] = number_of_errors[8] +1
+        expected_datatype[i] = typeof(rint[i])
+      end
+      if retrieved[9][i] != bint[i]
+        number_of_errors[9] = number_of_errors[9] +1
+        expected_datatype[i] = typeof(bint[i])
+      end
+      if retrieved[10][i] != dfloat[i]
+        number_of_errors[10] = number_of_errors[10] +1
+        expected_datatype[i] = typeof(dfloat[i])
+      end
+      if retrieved[11][i] != dpfloat[i]
+        number_of_errors[11] = number_of_errors[11] +1
+        expected_datatype[i] = typeof(dpfloat[i])
+      end
+      if retrieved[12][i] != chara[i]
+        number_of_errors[12] = number_of_errors[12] +1
+        expected_datatype[i] = typeof(chara[i])
+      end
+      if retrieved[13][i] != sint[i]
+        number_of_errors[13] = number_of_errors[13] +1
+        expected_datatype[i] = typeof(sint[i])
+      end
+    end
+    if sum(number_of_errors) == 0
+      output_string = "$output_string JDBC.jl: Operation Insert passed the validation test\n"
+      return true
+    else
+      output_string = "$output_string JDBC.jl: Operation Insert failed the validation test\n"
+      println("JDBC.jl: Operation Insert failed the validation test")
+      display_errors(number_of_errors, error_datatype, names(retrieved), expected_datatype)
+      return false
+    end
   end
 
 
-  flag = Bool[]
+  for i=1 : number_of_datasets
+       if retrieved[1][i] != i
+          return false
+       end
+  end
   push!(flag,retrieved[2] == varcha)
+  for i=1 : length(retrieved[3])
+    if !(Float16(retrieved[3][i]) == rfloat[i])
+        number_of_errors[3] = number_of_errors[3]+1
+    end
+  end
   push!(flag,retrieved[5] == tint)
   push!(flag,retrieved[6] == enume)
   push!(flag,retrieved[7] == mint)
   push!(flag,retrieved[8] == rint)
   push!(flag,retrieved[12] == chara)
   push!(flag,retrieved[13] == sint)
-  for i=1 : length(retrieved[3])
-    if !(Float16(retrieved[3][i]) == rfloat[i])
-        return false
-    end
-  end
+
   if database_and_driver != "Oracle_ODBC.jl"
     for i=1 : length(retrieved[10])
       if !(Float32(retrieved[10][i]) == dfloat[i]) && !(Float32(retrieved[10][i]) == round(dfloat[i],8))
@@ -519,10 +696,37 @@ function compare_retrieved(database_and_driver,retrieved,varcha, rfloat, datetim
       end
     end
   end
-  for i=1 : number_of_datasets
-       if retrieved[1][i] != i
-          return false
-       end
+
+
+  if database_and_driver == "Oracle_JDBC.jl"
+    for i=1 : number_of_datasets
+      datetime[i].data[11]='T'
+      if datetime[i] != string(retrieved[4][i])
+        return false
+      end
+    end
+    for i=1 : number_of_datasets
+      if string(bint[i]) != retrieved[9][i]
+        return false
+      end
+    end
+    for i=1 : number_of_datasets
+      if retrieved[11][i] !=  Float32(dpfloat[i])
+        return false
+      end
+    end
+
+
+  end
+
+  if database_and_driver == "MySQL_JDBC.jl"
+    for i=1 : number_of_datasets
+      if replace(string(retrieved[4][i]),"T"," ") != datetime[i]
+        return false
+      end
+    end
+    push!(flag,retrieved[9] == bint)
+    push!(flag,retrieved[11] == dpfloat)
   end
 
   if database_and_driver == "Oracle_ODBC.jl"
@@ -651,4 +855,5 @@ function compare_retrieved(database_and_driver,retrieved,varcha, rfloat, datetim
   end
   println("Validation test passed")
   return true
+  =#
 end
