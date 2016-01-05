@@ -1,0 +1,101 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <title>DBPerf.jl by JuliaDB</title>
+
+    <link rel="stylesheet" href="stylesheets/styles.css">
+    <link rel="stylesheet" href="stylesheets/github-light.css">
+    <meta name="viewport" content="width=device-width">
+    <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+  </head>
+  <body>
+    <div class="wrapper">
+      <header>
+        <h1>DBPerf.jl</h1>
+        <p></p>
+
+        <p class="view"><a href="https://github.com/JuliaDB/DBPerf.jl">View the Project on GitHub <small>JuliaDB/DBPerf.jl</small></a></p>
+
+
+        <ul>
+          <li><a href="https://github.com/JuliaDB/DBPerf.jl/zipball/master">Download <strong>ZIP File</strong></a></li>
+          <li><a href="https://github.com/JuliaDB/DBPerf.jl/tarball/master">Download <strong>TAR Ball</strong></a></li>
+          <li><a href="https://github.com/JuliaDB/DBPerf.jl">View On <strong>GitHub</strong></a></li>
+        </ul>
+      </header>
+      <section>
+        <h6>
+<a id="this-repository-will-contain-the-code-that-benchmarks-all-the-julia-database-drivers--wrappers--end-users-can-utilize-this-code-to-compare-the-performance-between-various-database-drivers-available-in-julia-this-code-creates--artificial-datasets-of-given-size-size-can-be-specified-in-configjl--and-performs-following-operations-using-one-of-the-database-driver-create-insert-update-drop-and-retrieving-the-records-from-database-as-a-dataframe-end-users-can-specify-which-database-driver-they-would-like-to-use" class="anchor" href="#this-repository-will-contain-the-code-that-benchmarks-all-the-julia-database-drivers--wrappers--end-users-can-utilize-this-code-to-compare-the-performance-between-various-database-drivers-available-in-julia-this-code-creates--artificial-datasets-of-given-size-size-can-be-specified-in-configjl--and-performs-following-operations-using-one-of-the-database-driver-create-insert-update-drop-and-retrieving-the-records-from-database-as-a-dataframe-end-users-can-specify-which-database-driver-they-would-like-to-use" aria-hidden="true"><span class="octicon octicon-link"></span></a>This repository will contain the code that benchmarks all the Julia Database Drivers / Wrappers , End-Users can utilize this code to compare the performance between various Database drivers available in Julia. This code creates  artificial datasets of given size (Size can be specified in config.jl ) and performs following operations using one of the Database driver: Create, Insert, Update, Drop and retrieving the records from DataBase as a DataFrame. (End-Users can specify which Database driver they would like to use)</h6>
+
+<p>Datasets being created would cover following Data-types: <code>TINYINT, SMALLINT, MEDIUMINT, INTEGER, BIGINT, FLOAT, DOUBLE, DOULBE PRECISION, DATETIME, CHAR, VARCHAR, ENUM</code></p>
+
+<p>Measures have been taken such that the random values being generated are well within the Lower bound and Upper bound of that particular datatype.</p>
+
+<h1>
+<a id="usage" class="anchor" href="#usage" aria-hidden="true"><span class="octicon octicon-link"></span></a>USAGE</h1>
+
+<p>End-Users can provide input through command-line mode or they can directly invoke function <code>DBPerf()</code> and provide input as arguments.</p>
+
+<h4>
+<a id="command-line-mode" class="anchor" href="#command-line-mode" aria-hidden="true"><span class="octicon octicon-link"></span></a>Command-Line mode</h4>
+
+<pre><code>$ julia DBPerf.jl &lt;Database_Driver_1.jl&gt; &lt;Database_Driver_2.jl&gt; ....... &lt;Database_Driver_N.jl&gt; &lt;DBMS&gt;
+</code></pre>
+
+<p>Wherein</p>
+
+<ul>
+<li>Database_Driver.jl can be one of the following: ODBC.jl, JDBC.jl, PostgreSQL.jl, MySQL.jl, Mongo.jl, SQLite.jl</li>
+<li>DBMS field is applicable only if you're using JDBC.jl, DBMS can be either one of the following: Oracle, MySQL</li>
+</ul>
+
+<h6>
+<a id="example" class="anchor" href="#example" aria-hidden="true"><span class="octicon octicon-link"></span></a>Example</h6>
+
+<pre><code>DBPerf.jl ODBC.jl JDBC.jl Oracle
+</code></pre>
+
+<p>Above example will conduct a performance test on Database driver ODBC.jl and JDBC.jl, DBMS will be automatically selected for ODBC.jl based on the credentials provided in config.jl, whereas JDBC.jl will be tested against Oracle</p>
+
+<h4>
+<a id="executing-from-julia-prompt" class="anchor" href="#executing-from-julia-prompt" aria-hidden="true"><span class="octicon octicon-link"></span></a>Executing from Julia prompt</h4>
+
+<pre><code>julia&gt; include("DBPerf.jl")
+julia&gt; DBPerf(&lt;Database_Driver_1.jl&gt;, &lt;Database_Driver_2.jl&gt;, ....... &lt;Database_Driver_N.jl&gt;, &lt;DBMS&gt;)
+</code></pre>
+
+<h6>
+<a id="example-1" class="anchor" href="#example-1" aria-hidden="true"><span class="octicon octicon-link"></span></a>Example</h6>
+
+<pre><code>DBPerf("ODBC.jl","JDBC.jl","Oracle")
+</code></pre>
+
+<p>Above example will conduct a performance test on Database driver ODBC.jl and JDBC.jl, DBMS will be automatically selected for ODBC.jl based on the credentials provided in config.jl, whereas JDBC.jl will be tested against Oracle</p>
+
+<h4>
+<a id="configjl-should-contain-all-the-credentials-required-for-a-dbms-connection-and-end-users-can-specify-the-size-of-the-dataset-to-be-created-in-configjl" class="anchor" href="#configjl-should-contain-all-the-credentials-required-for-a-dbms-connection-and-end-users-can-specify-the-size-of-the-dataset-to-be-created-in-configjl" aria-hidden="true"><span class="octicon octicon-link"></span></a>config.jl should contain all the credentials required for a DBMS connection and end-users can specify the size of the dataset to be created in config.jl</h4>
+
+<h1>
+<a id="todo" class="anchor" href="#todo" aria-hidden="true"><span class="octicon octicon-link"></span></a>TODO</h1>
+
+<ol>
+<li>Include HBase and Spark SQL in the performance test.</li>
+<li>Create a performance table that lists the performance results for all the Database drivers.</li>
+<li>Creating an automated script that pulls the latest code from all the database drivers to conduct a performance test and automatically update the performance table every week.</li>
+<li>Use “Prepare” functionality (If available) to update, insert and retrieve records.</li>
+<li>Create performance tests over PostgreSQL, SQLite using JDBC.jl and ODBC.jl</li>
+</ol>
+      </section>
+      <footer>
+        <p>This project is maintained by <a href="https://github.com/JuliaDB">JuliaDB</a></p>
+        <p><small>Hosted on GitHub Pages &mdash; Theme by <a href="https://github.com/orderedlist">orderedlist</a></small></p>
+      </footer>
+    </div>
+    <script src="javascripts/scale.fix.js"></script>
+    
+  </body>
+</html>
